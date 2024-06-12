@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  your_service_name:
+    image: <image_name>
+    runtime: nvidia
+    volumes:
+      - /home/cslfiu/dev/cnn_ensemble_vsi:/tmp
+    working_dir: /tmp
+    command: "<python_command> <args>"
