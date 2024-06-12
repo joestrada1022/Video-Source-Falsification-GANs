@@ -33,26 +33,26 @@ if __name__ == "__main__":
 
             VIDEO_NAMES = [item for item in os.listdir(video_type_folder) if os.path.isfile(os.path.join(video_type_folder, item))]
 
-            if "flat"  == video_type:
-                new_video_type = "__flat__"
-            elif "flatWA" == video_type:
-                new_video_type = "__flat__"
-            elif "flatYT" == video_type:
-                new_video_type = "__flat__"
-            elif "indoor" == video_type:
-                new_video_type = "__indoor__"
-            elif "indoorWA" == video_type:
-                new_video_type = "__indoor__"
-            elif "indoorYT" == video_type:
-                new_video_type = "__indoor__"
-            elif "outdoor" == video_type:
-                new_video_type = "__outdoor__"
-            elif "outdoorWA" == video_type:
-                new_video_type = "__outdoor__"
-            elif "outdoorYT" == video_type:
-                new_video_type = "__outdoor__"
+            # if "flat"  == video_type:
+            #     new_video_type = "__flat__"
+            # elif "flatWA" == video_type:
+            #     new_video_type = "__flat__"
+            # elif "flatYT" == video_type:
+            #     new_video_type = "__flat__"
+            # elif "indoor" == video_type:
+            #     new_video_type = "__indoor__"
+            # elif "indoorWA" == video_type:
+            #     new_video_type = "__indoor__"
+            # elif "indoorYT" == video_type:
+            #     new_video_type = "__indoor__"
+            # elif "outdoor" == video_type:
+            #     new_video_type = "__outdoor__"
+            # elif "outdoorWA" == video_type:
+            #     new_video_type = "__outdoor__"
+            # elif "outdoorYT" == video_type:
+            #     new_video_type = "__outdoor__"
             
-            outputPath = os.path.join(output_dir, device, new_video_type)
+            outputPath = os.path.join(output_dir, device)
             if not os.path.isdir(outputPath):
                 os.makedirs(outputPath)
 
@@ -63,12 +63,16 @@ if __name__ == "__main__":
                 output_video_folder_name = video.split(".")[0]
                 
                 
-                output_video_path = os.path.join(outputPath, output_video_folder_name)
+                output_video_path = os.path.join(outputPath, video_type)
+                output_video_path = os.path.join(output_video_path, output_video_folder_name)
                 if not os.path.isdir(output_video_path):
                     os.makedirs(output_video_path)
 
                 video_path = os.path.join(video_type_folder, video)
                 print("Extracting frames for " + video)
-                os.system("sudo python3 dataset/frames_extraction/iframe.py -i " + video_path + " -p " + output_video_path + " -o " + video_type + " -c " + video) 
+                iframe_cmd = f"sudo python3 dataset/frames_extraction/iframe.py -i '{video_path}' -p '{output_video_path}' -o '{video_type}' -c '{video}'"
+                # iframe_cmd = '"{}"'.format(iframe_cmd)
+                print(iframe_cmd)
+                os.system(iframe_cmd) 
 
                 

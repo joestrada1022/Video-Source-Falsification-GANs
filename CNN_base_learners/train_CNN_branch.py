@@ -2,6 +2,7 @@ import argparse, os
 from prepare_dataset_for_network import DataSetGeneratorForBranchCNN
 from cnn_network import BranchCNNModel
 
+# --ds_path="/home/cslfiu/dev/cnn_ensemble_vsi/fixed_patches" --model_path="/home/cslfiu/dev/cnn_ensemble_vsi/cnn_ensemble_vsi/models" --tensor_flow_path="/home/cslfiu/dev/cnn_ensemble_vsi/cnn_ensemble_vsi/tensors" --quadrant="quadrant_1"
 parser = argparse.ArgumentParser(
     description='Train the constrained_net',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -17,8 +18,8 @@ if __name__ == "__main__":
     tensor_flow_path = args.tensor_flow_path
     quadrant = args.quadrant
 
-    dataset_path = os.path.join(dataset_path, quadrant)
-    data_factory = DataSetGeneratorForBranchCNN(input_dir_patchs=dataset_path)
+    # dataset_path = os.path.join(dataset_path, quadrant)
+    data_factory = DataSetGeneratorForBranchCNN(input_dir_patchs=dataset_path, quadrant=quadrant)
 
     num_classes = len(data_factory.get_class_names())
     
@@ -27,6 +28,9 @@ if __name__ == "__main__":
 
     valid_dataset_dict = data_factory.create_validation_dataset()
     print(f'Validation dataset contains {len(valid_dataset_dict)} samples')
+
+    test_dataset_dict = data_factory.create_test_dataset()
+    print(f'Testing dataset contains {len(valid_dataset_dict)} samples')
     
     constr_net = BranchCNNModel(quadrant=quadrant, model_files_path=model_path, tensorflow_files_path=tensor_flow_path)
     

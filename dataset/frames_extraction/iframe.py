@@ -48,8 +48,8 @@ def main(argv):
         print (usage)
         sys.exit()
 
-    # ffmpeg = '/usr/bin/ffmpeg' # Linux directory
-    ffmpeg_path = '/usr/local/bin/ffmpeg' # MAC directory
+    ffmpeg_path = '/usr/bin/ffmpeg' # Linux directory
+    # ffmpeg_path = '/usr/local/bin/ffmpeg' # MAC directory
 
     outFile = videoName + '_%03d.jpg'
         

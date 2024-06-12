@@ -108,7 +108,7 @@ class BranchCNNModel:
 
         model = Model(input_layer, final_dense)
 
-        opt = tf.keras.optimizers.Adam()
+        opt = tf.keras.optimizers.SGD(learning_rate=0.001, momentum=0.95, weight_decay=0.0005)
         model.compile(loss="categorical_crossentropy",
                       optimizer=opt,
                       metrics=['accuracy'])
@@ -127,12 +127,12 @@ class BranchCNNModel:
         callbacks = self.get_callbacks()
         
         self.model.fit(DataGeneratorCNNBranch(train_ds, num_classes=num_classes, batch_size=32),
-                       epochs=70,
+                       epochs=25,
                        initial_epoch=0,
                        validation_data=DataGeneratorCNNBranch(val_ds_test, num_classes=num_classes, batch_size=32, shuffle=False),
                        callbacks=callbacks,
-                       workers=12,
-                       use_multiprocessing=True)
+                    #    workers=num_cpus
+                       )
 
     def get_tensorboard_path(self):
         if self.model_name is None:
@@ -151,12 +151,24 @@ class BranchCNNModel:
         else:
             print(f"\nSummary of model:\n{self.model.summary()}")
 
-    def get_save_model_path(self, file_name):
+    def get_save_model_path_acc(self, file_name):
         if self.model_name is None:
             raise ValueError("Model has no name specified. This is required in order to save checkpoints.")
 
         # Create directory if not exists
-        path = os.path.join(self.global_save_model_dir, self.model_name)
+        path = os.path.join(self.global_save_model_dir, self.model_name, "acc")
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        # Append file name and return
+        return os.path.join(path, file_name)
+
+    def get_save_model_path_loss(self, file_name):
+        if self.model_name is None:
+            raise ValueError("Model has no name specified. This is required in order to save checkpoints.")
+
+        # Create directory if not exists
+        path = os.path.join(self.global_save_model_dir, self.model_name, "loss")
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -164,26 +176,34 @@ class BranchCNNModel:
         return os.path.join(path, file_name)
         
     def get_callbacks(self):
-        default_file_name = "fm-e{epoch:05d}.h5"
-        save_model_path = self.get_save_model_path(default_file_name)
+        default_file_name = "fm-e{epoch:05d}.keras"
+        save_model_path_acc = self.get_save_model_path_acc(default_file_name)
+        save_model_path_loss = self.get_save_model_path_loss(default_file_name)
 
-        save_model_cb = tf.keras.callbacks.ModelCheckpoint(filepath=save_model_path,
+        save_model_acc = tf.keras.callbacks.ModelCheckpoint(filepath=save_model_path_acc,
                                                             monitor='val_accuracy',
                                                             save_best_only=True,
                                                             verbose=1,
                                                             save_weights_only=False,
-                                                            period=1)
+                                                            save_freq='epoch')
+
+        save_model_val = tf.keras.callbacks.ModelCheckpoint(filepath=save_model_path_loss,
+                                                            monitor='val_loss',
+                                                            save_best_only=True,
+                                                            verbose=1,
+                                                            save_weights_only=False,
+                                                            save_freq='epoch')                                                     
                                                  
 
         tensorboard_cb = TensorBoard(log_dir=self.get_tensorboard_path())
-        print_lr_cb = PrintLearningRate()
+        # print_lr_cb = PrintLearningRate()
 
-        return [save_model_cb, tensorboard_cb, print_lr_cb]
+        return [save_model_acc, save_model_val, tensorboard_cb]
 
 class PrintLearningRate(Callback):
     def on_epoch_end(self, epoch, logs=None):
         lr = self.model.optimizer.lr
-        decay = self.model.optimizer.decay
+        decay = self.model.optimizer.weight_decay
         iterations = self.model.optimizer.iterations
         lr_with_decay = lr / (1. + decay * K.cast(iterations, K.dtype(decay)))
         print(f"Learning rate on_epoch_end epoch {epoch}: {K.eval(lr_with_decay)}")

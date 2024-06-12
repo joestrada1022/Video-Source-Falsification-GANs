@@ -83,6 +83,7 @@ class EnsembleCNN:
 
         data_factory = DataSetGeneratorForEnsembleModel(input_dir_patchs=self.ds_path_quadrant_1)
         test_ds = data_factory.create_test_ds_4_quadrants(self.ds_path_quadrant_1, self.ds_path_quadrant_2, self.ds_path_quadrant_3, self.ds_path_quadrant_4)
+
         actual_encoded_labels, frames_list = self.get_files_and_labels(test_ds)
 
         num_classes = len(data_factory.get_class_names())
