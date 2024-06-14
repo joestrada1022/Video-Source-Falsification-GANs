@@ -8,26 +8,16 @@ from tensorflow.keras.models import Model # type: ignore
 import os
 
 class Discriminator():
-    def __init__(self, input_shape, num_classes, model_files_path, tensorflow_files_path):
+    def __init__(self, input_shape, num_classes):
         self.model = None
         self.model_name = None
-        self.input_height, self.input_width, self.input_channels = input_shape
+        self.input_width, self.input_height, self.input_channels = input_shape
         self.num_classes = num_classes
 
     def __generate_model_name(self):
         model_name = f"Discriminator"
 
         return model_name
-    
-    def __generate_model_path(self, model_files_path):
-        path_base = model_files_path
-        new_path = os.path.join(path_base, self.quadrant)
-        return new_path
-
-    def __generate_tensor_path(self, tensorflow_files_path):
-        path_base = tensorflow_files_path
-        new_path = os.path.join(path_base, self.quadrant)
-        return new_path
     
     """
     According to DCGAN, "Directly applying batchnorm to all layers however, 

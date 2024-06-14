@@ -9,10 +9,10 @@ import os
 
 
 class Generator():
-    def __init__(self, input_shape, num_classes, model_files_path, tensorflow_files_path):
+    def __init__(self, input_shape, num_classes):
         self.model = None
         self.model_name = None
-        self.input_height, self.input_width, self.input_channels = input_shape
+        self.input_width, self.input_height, self.input_channels = input_shape
         self.num_classes = num_classes
 
     def __generate_model_name(self):
@@ -49,9 +49,10 @@ class Generator():
         act6 = layers.LeakyReLU()(conv2d_6)
 
         # feature map reduction
-        conv2d_7 = layers.Conv2D(3, kernel_size=3, strides=1, padding='same', activation='tanh')(act6)
+        conv2d_7 = layers.Conv2D(3, kernel_size=3, strides=1, padding='same')(act6)
 
-        generator_output = conv2d_7
+        generator_output = layers.Activation('tanh')(conv2d_7)
+        generator_output = layers.Reshape(shape)(generator_output) 
 
         model = Model([gen_input, label_input], generator_output)
 
