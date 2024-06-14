@@ -1,5 +1,5 @@
 # e an official TensorFlow GPU image as a base
-FROM tensorflow/tensorflow:latest-gpu
+FROM tensorflow/tensorflow:latest-gpu-jupyter
 
 
 # Install additional dependencies
