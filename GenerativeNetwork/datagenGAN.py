@@ -86,10 +86,11 @@ class DataSetGeneratorGAN:
         self.test_image_count = len(list(self.data_dir_patchs.glob(f'**/Testing/**/*.jpg')))
         self.val_image_count = len(list(self.data_dir_patchs.glob(f'**/Validation/**/*.jpg')))
 
+
+        self.exclude_devices = excluded_devices if excluded_devices is not None else []
         self.class_names = self.get_classes(classes)
         print(self.class_names)
 
-        self.exclude_devices = excluded_devices
 
     def get_classes(self, classes):
         if classes is not None:
@@ -122,7 +123,7 @@ class DataSetGeneratorGAN:
                 label[i] = 1
         return label
     
-    def create_dataset(self, type='Training'):
+    def create_dataset(self, type='Training') -> list:
         input_path_file_names = np.array(glob(str(self.data_dir_patchs) + f"/**/{type}/**/*.jpg", recursive = True))
         input_patchs_file_names_temp = []
         for file in input_path_file_names:
