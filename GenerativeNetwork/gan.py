@@ -2,128 +2,125 @@ import tensorflow as tf
 import numpy as np
 
 from tensorflow.keras.callbacks import TensorBoard, Callback  # type: ignore
-from tensorflow.keras import layers  # type: ignore
+from tensorflow.keras import layers, optimizers, metrics, utils  # type: ignore
 from tensorflow.keras.models import Model  # type: ignore
 
 from generator import Generator
 from discriminator import Discriminator
+from datagenGAN import DataGeneratorGAN, DataSetGeneratorGAN
+from utils import apply_cfa
 
 import os
+   
+def get_callbacks(save_model_path_acc, save_model_path_loss, tensorboard_path):
+    default_file_name = "fm-e{epoch:05d}.keras"
+    save_model_path_acc = os.path.join(save_model_path_acc, default_file_name)
+    save_model_path_loss = os.path.join(save_model_path_loss, default_file_name)
+
+    save_model_acc = tf.keras.callbacks.ModelCheckpoint(filepath=save_model_path_acc,
+                                                        monitor='gen_loss',
+                                                        save_best_only=True,
+                                                        verbose=1,
+                                                        save_weights_only=False,
+                                                        save_freq='epoch')
+
+    save_model_val = tf.keras.callbacks.ModelCheckpoint(filepath=save_model_path_loss,
+                                                        monitor='disc_loss',
+                                                        save_best_only=True,
+                                                        verbose=1,
+                                                        save_weights_only=False,
+                                                        save_freq='epoch')                                                     
+                                                
+
+    tensorboard_cb = TensorBoard(log_dir=tensorboard_path)
+
+    return [save_model_acc, save_model_val, tensorboard_cb]
+
+# LD = log D(I) + log(1 − D(G(I'))) 
+def d_loss(real_output, fake_output):
+    real_loss = tf.losses.binary_crossentropy(tf.ones_like(real_output), real_output)
+    fake_loss = tf.losses.binary_crossentropy(tf.zeros_like(fake_output), fake_output)
+    total_loss = real_loss + fake_loss
+    return total_loss
+
+# La = log(1 − D(G(I'))),
+def g_loss(fake_output):
+    return tf.losses.binary_crossentropy(tf.ones_like(fake_output), fake_output)
+
+# image to image translation
+@tf.function
+def train_step(data, g_opt, d_opt, gen, disc):
+    images, labels = data
+    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+        # Generate fake images
+        tf.print(images.shape)
+        fake_images = gen.model(data, training=True)
+
+        # Calculate discriminator loss
+        real_output = disc.model(images, training=True)
+        fake_output = disc.model(fake_images, training=True)
+        disc_loss = d_loss(real_output, fake_output)
+
+        # Calculate generator loss
+        gen_loss = g_loss(fake_output)
+
+    # Calculate gradients
+    gen_gradients = gen_tape.gradient(gen_loss, gen.model.trainable_variables)
+    disc_gradients = disc_tape.gradient(disc_loss, disc.model.trainable_variables)
+
+    # Update generator and discriminator weights
+    g_opt.apply_gradients(zip(gen_gradients, gen.model.trainable_variables))
+    d_opt.apply_gradients(zip(disc_gradients, disc.model.trainable_variables))
+
+    return gen_loss, disc_loss
 
 
-class GAN():
-    def __init__(
-        self,
-        input_shape,
-        model_files_path,
-        tensorflow_files_path,
-    ):
 
-        self.input_shape = input_shape
-        self.model = None
-        self.model_name = None
-        
-        self.global_save_model_dir = self.__generate_model_path(model_files_path)
-        self.global_tensorboard_dir = self.__generate_tensor_path(tensorflow_files_path)
 
-    def __generate_model_name(self):
-        model_name = f"GAN"
+shape = (1080, 1920, 3)
+gen = Generator(shape, 4)
+gen.create_model()
+gen.print_model_summary()
+g_opt = optimizers.Adam(1e-4)
 
-        return model_name
 
-    def __generate_model_path(self, model_files_path):
-        return model_files_path
+disc = Discriminator(shape, 4)
+disc.create_model()
+disc.print_model_summary()
+d_opt = optimizers.Adam(1e-4)
 
-    def __generate_tensor_path(self, tensorflow_files_path):
-        return tensorflow_files_path
+train_loss_metric = metrics.Mean(name='train_loss')
 
-    def create_model(self, generator, discriminator, model_name=None):
-        discriminator.trainable = False
-        
-        gen_input = layers.Input(shape=self.input_shape)
-        labels = tf.repeat(tf.one_hot([0, 1], 2), repeats=1080, axis=0)
-        generated_image = generator([gen_input, labels])
+data_path = "/home/cslfiu/dev/cnn_vscf/frames"
 
-        disc_output = discriminator(generated_image)
+dataset_maker = DataSetGeneratorGAN(data_path)
 
-        model = Model(gen_input, disc_output) 
+num_classes = len(dataset_maker.get_class_names())
 
-        opt = tf.keras.optimizers.Adam(learning_rate=0.0002)
-        model.compile(loss='binary_crossentropy',
-                      optimizer=opt,
-                      metrics='accuracy')
-        
-        model_name = self.__generate_model_name()
+train = dataset_maker.create_train_dataset()
+print(f'Train dataset contains {len(train)} samples')
 
-        self.model_name = model_name
-        self.model = model
 
-        return model
+datagen = DataGeneratorGAN(train, num_classes=num_classes)
 
-    def train(self, train_ds, val_ds_test, num_classes):
-        pass
+# Get callbacks
+callbacks = get_callbacks(save_model_path_acc="/home/cslfiu/dev/cnn_vscf/models/acc",
+                            save_model_path_loss="/home/cslfiu/dev/cnn_vscf/models/loss",
+                            tensorboard_path="/home/cslfiu/dev/cnn_vscf/tensorboard")
 
-    def get_tensorboard_path(self):
-        if self.model_name is None:
-            raise ValueError("Model has no name specified. This is required in order to save TensorBoard log-files.")
-
-        # Create directory if not exists
-        path = os.path.join(self.global_tensorboard_dir, self.model_name)
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        return path
-
-    def print_model_summary(self):
-        if self.model is None:
-            print("Can't print model summary, self.model is None!")
-        else:
-            print(f"\nSummary of model:\n{self.model.summary()}")
-
-    def get_save_model_path_acc(self, file_name):
-        if self.model_name is None:
-            raise ValueError("Model has no name specified. This is required in order to save checkpoints.")
-
-        # Create directory if not exists
-        path = os.path.join(self.global_save_model_dir, self.model_name, "acc")
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        # Append file name and return
-        return os.path.join(path, file_name)
-
-    def get_save_model_path_loss(self, file_name):
-        if self.model_name is None:
-            raise ValueError("Model has no name specified. This is required in order to save checkpoints.")
-
-        # Create directory if not exists
-        path = os.path.join(self.global_save_model_dir, self.model_name, "loss")
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        # Append file name and return
-        return os.path.join(path, file_name)
-        
-    def get_callbacks(self):
-        default_file_name = "fm-e{epoch:05d}.keras"
-        save_model_path_acc = self.get_save_model_path_acc(default_file_name)
-        save_model_path_loss = self.get_save_model_path_loss(default_file_name)
-
-        save_model_acc = tf.keras.callbacks.ModelCheckpoint(filepath=save_model_path_acc,
-                                                            monitor='val_accuracy',
-                                                            save_best_only=True,
-                                                            verbose=1,
-                                                            save_weights_only=False,
-                                                            save_freq='epoch')
-
-        save_model_val = tf.keras.callbacks.ModelCheckpoint(filepath=save_model_path_loss,
-                                                            monitor='val_loss',
-                                                            save_best_only=True,
-                                                            verbose=1,
-                                                            save_weights_only=False,
-                                                            save_freq='epoch')                                                     
-                                                 
-
-        tensorboard_cb = TensorBoard(log_dir=self.get_tensorboard_path())
-
-        return [save_model_acc, save_model_val, tensorboard_cb]
+# Training loop
+for epoch in range(10):
+    print(f"Epoch {epoch+1}")
+    for i, (frames_batch, labels_batch) in enumerate(datagen):
+        data = (frames_batch, labels_batch)
+        gen_loss, disc_loss = train_step(data, g_opt, d_opt, gen, disc)
+        train_loss_metric(gen_loss)
+        train_loss_metric(disc_loss)
+        if i % 10 == 0:
+            print(f"Batch {i+1}: Gen Loss: {gen_loss}, Disc Loss: {disc_loss}")
+    print(f"Epoch {epoch+1}: Gen Loss: {train_loss_metric.result()}")
+    print(f"Epoch {epoch+1}: Disc Loss: {train_loss_metric.result()}")
+    train_loss_metric.reset_states()
+    # Save the model
+    gen.model.save(f"/home/cslfiu/dev/cnn_vscf/models/gen-{epoch}.h5")
+    disc.model.save(f"/home/cslfiu/dev/cnn_vscf/models/disc-{epoch}.h5")
