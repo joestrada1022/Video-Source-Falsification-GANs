@@ -2,7 +2,6 @@ services:
   app:
     build:
       context: .
-      dockerfile: ./gpu.Dockerfile
     working_dir: /tmp
     tty: true
     volumes:
