@@ -8,3 +8,6 @@ __pycache__
 
 # too much data
 data/
+
+# generated testing outputs
+generated/batch_testing/*
