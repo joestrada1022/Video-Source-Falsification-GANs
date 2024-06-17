@@ -51,8 +51,8 @@ class DataGeneratorGAN(Sequence):
             np.random.shuffle(self.indexes)
 
     def __generate_frames_ds__(self, list_IDs_temp):
-        frame_ds = np.empty((self.batch_size, 1080, 1920, 3), dtype=np.uint8)
-        labels_ds = np.empty((self.batch_size, self.num_classes), dtype=np.uint8)
+        frame_ds = np.empty((self.batch_size, 1080, 1920, 3), dtype=np.float32)
+        labels_ds = np.empty((self.batch_size, self.num_classes), dtype=np.float32)
         for i, id in enumerate(list_IDs_temp):
             key = "item_ID"
             val = id
@@ -73,8 +73,8 @@ class DataGeneratorGAN(Sequence):
         
         img = apply_cfa(img)
         # Normalize the pixel values
-        img = tf.cast(img, tf.float32) - 127.5 / 127.5
-
+        img = tf.cast(img, tf.float32)
+        img = (img - 127.5) / 127.5
         return img
     
 class DataSetGeneratorGAN:

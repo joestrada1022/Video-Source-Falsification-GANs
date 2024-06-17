@@ -1,13 +1,14 @@
 from datagenGAN import DataGeneratorGAN, DataSetGeneratorGAN
-import matplotlib.pyplot as plt
+import cv2
+import time
 
-data_path = "/home/cslfiu/dev/cnn_vscf/frames"
+data_path = "data/frames"
 
 dataset_maker = DataSetGeneratorGAN(data_path)
 
 num_classes = len(dataset_maker.get_class_names())
 
-train = dataset_maker.create_train_dataset()
+train = dataset_maker.create_dataset()
 print(f'Train dataset contains {len(train)} samples')
 
 
@@ -18,8 +19,14 @@ for i, (frames_batch, labels_batch) in enumerate(datagen):
     print(f"Batch {i+1}:")
     print(f"Frames batch shape: {frames_batch.shape}")
     print(f"Labels batch shape: {labels_batch.shape}")
-    if i >= 10:  # stop after 10 batches
+    if i >= 2:  # stop after 10 batches
         break
     # display the most recent image
-plt.imshow(frames_batch[-1])
-plt.show()
+img = frames_batch[-1]
+img = (img * 127.5) + 127.5
+
+img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+# make custom id for image to save
+id = time.time() 
+
+cv2.imwrite(f"generated/batch_testing/test{id}.jpg", img)
