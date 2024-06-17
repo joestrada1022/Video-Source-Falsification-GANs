@@ -1,5 +1,9 @@
 import cv2
 import numpy as np
+from tensorflow.keras.models import load_model # type: ignore
+from glob import glob
+import random
+from matplotlib import pyplot as plt
 
 def apply_cfa(image):
     # resize before interpolation to keep dimensions the same
@@ -21,3 +25,38 @@ def apply_cfa(image):
     cfa_image += mask_g * image
     cfa_image += mask_b * image
     return cfa_image
+
+def display_samples(model_path, image_path=None, save_path=None):
+    if image_path is None:
+        image_path = random.choice(glob("data/frames/**/Validation/**/*.jpg"))
+    model = load_model(model_path)
+    img = cv2.imread(image_path)
+    orig = img.copy()
+    flip = False
+    if img.shape[0] == 1920 and img.shape[1] == 1080:
+        img = np.transpose(img, (1, 0, 2))
+        flip = True
+    img = (img - 127.5) / 127.5
+    img = np.expand_dims(img, axis=0)
+
+    output = model.predict(img)
+    output = (output * 127.5) + 127.5
+    output = output[0]
+    if flip:
+        output = np.transpose(output, (1, 0, 2))
+
+    output = output.astype(np.uint8)
+    output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
+    # display original and output images side by side matplotlib
+    fig, axes = plt.subplots(1, 2)
+    axes[0].imshow(orig)
+    axes[0].set_title("Original Image")
+    axes[0].axis('off')
+    axes[1].imshow(output)
+    axes[1].set_title("Generated Image")
+    axes[1].axis('off')
+    if save_path:
+        plt.savefig(save_path)
+    plt.show()
+    return orig, output
+
