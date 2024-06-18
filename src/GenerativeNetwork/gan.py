@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from tqdm import tqdm
 
 from tensorflow.keras.callbacks import TensorBoard, Callback  # type: ignore
 from tensorflow.keras import layers, optimizers, metrics, utils  # type: ignore
@@ -8,44 +9,21 @@ from tensorflow.keras.models import Model  # type: ignore
 from generator import Generator
 from discriminator import Discriminator
 from datagenGAN import DataGeneratorGAN, DataSetGeneratorGAN
-from utils import apply_cfa
+import os, datetime
 
-import os
-   
-def get_callbacks(save_model_path_acc, save_model_path_loss, tensorboard_path):
-    default_file_name = "fm-e{epoch:05d}.keras"
-    save_model_path_acc = os.path.join(save_model_path_acc, default_file_name)
-    save_model_path_loss = os.path.join(save_model_path_loss, default_file_name)
 
-    save_model_acc = tf.keras.callbacks.ModelCheckpoint(filepath=save_model_path_acc,
-                                                        monitor='gen_loss',
-                                                        save_best_only=True,
-                                                        verbose=1,
-                                                        save_weights_only=False,
-                                                        save_freq='epoch')
-
-    save_model_val = tf.keras.callbacks.ModelCheckpoint(filepath=save_model_path_loss,
-                                                        monitor='disc_loss',
-                                                        save_best_only=True,
-                                                        verbose=1,
-                                                        save_weights_only=False,
-                                                        save_freq='epoch')                                                     
-                                                
-
-    tensorboard_cb = TensorBoard(log_dir=tensorboard_path)
-
-    return [save_model_acc, save_model_val, tensorboard_cb]
-
-# LD = log D(I) + log(1 − D(G(I'))) 
+# LD = log D(I) + log(1 − D(G(I')))
 def d_loss(real_output, fake_output):
     real_loss = tf.losses.binary_crossentropy(tf.ones_like(real_output), real_output)
     fake_loss = tf.losses.binary_crossentropy(tf.zeros_like(fake_output), fake_output)
     total_loss = real_loss + fake_loss
     return total_loss
 
+
 # La = log(1 − D(G(I'))),
 def g_loss(fake_output):
     return tf.losses.binary_crossentropy(tf.ones_like(fake_output), fake_output)
+
 
 # image to image translation
 @tf.function
@@ -74,8 +52,6 @@ def train_step(data, g_opt, d_opt, gen, disc):
     return gen_loss, disc_loss
 
 
-
-
 shape = (1080, 1920, 3)
 gen = Generator(shape, 4)
 gen.create_model()
@@ -88,39 +64,74 @@ disc.create_model()
 disc.print_model_summary()
 d_opt = optimizers.Adam(1e-4)
 
-train_loss_metric = metrics.Mean(name='train_loss')
+train_loss_metric = metrics.Mean(name="train_loss")
 
-data_path = "/home/cslfiu/dev/cnn_vscf/frames"
+data_path = "data/frames"
 
 dataset_maker = DataSetGeneratorGAN(data_path)
 
 num_classes = len(dataset_maker.get_class_names())
 
 train = dataset_maker.create_dataset()
-print(f'Train dataset contains {len(train)} samples')
+print(f"Train dataset contains {len(train)} samples")
 
 
-datagen = DataGeneratorGAN(train, num_classes=num_classes, batch_size=5)
+datagen = DataGeneratorGAN(train, num_classes=num_classes, batch_size=2)
 
-# Get callbacks
-callbacks = get_callbacks(save_model_path_acc="/home/cslfiu/dev/cnn_vscf/models/acc",
-                            save_model_path_loss="/home/cslfiu/dev/cnn_vscf/models/loss",
-                            tensorboard_path="/home/cslfiu/dev/cnn_vscf/tensorboard")
+current_time = str(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+train_log_dir = "generated/tensors/gan" + current_time + "/"
+os.makedirs(os.path.join(train_log_dir, "gen"))
+os.makedirs(os.path.join(train_log_dir, "disc"))
+
+model_output_dir = "generated/models/gan" + current_time + "/"
+os.makedirs(model_output_dir)
+
+gen_summary_writer = tf.summary.create_file_writer(train_log_dir + 'gen')
+disc_summary_writer = tf.summary.create_file_writer(train_log_dir + 'disc')
+
+
+EPOCHS = 1
 
 # Training loop
-for epoch in range(10):
-    print(f"Epoch {epoch+1}")
+for epoch in range(EPOCHS):
+    print(f"Epoch {epoch+1}/{EPOCHS}")
+
+    # get total number of batches
+    num_batches = len(datagen)
+
+    # initialize progress bar
+    progress = tqdm(total=num_batches, desc="Epoch {}".format(epoch + 1))
+
     for i, (frames_batch, labels_batch) in enumerate(datagen):
-        tf.print(frames_batch.shape, labels_batch.shape, sep='\t')
+        # tf.print(frames_batch.shape, labels_batch.shape, sep='\t')
         data = (frames_batch, labels_batch)
         gen_loss, disc_loss = train_step(data, g_opt, d_opt, gen, disc)
         train_loss_metric(gen_loss)
         train_loss_metric(disc_loss)
         if i % 10 == 0:
-            print(f"Batch {i+1}: Gen Loss: {gen_loss}, Disc Loss: {disc_loss}")
-    print(f"Epoch {epoch+1}: Gen Loss: {train_loss_metric.result()}")
-    print(f"Epoch {epoch+1}: Disc Loss: {train_loss_metric.result()}")
-    train_loss_metric.reset_states()
+            progress.set_description(
+                f"Batch {i+1}: Gen Loss: {gen_loss}, Disc Loss: {disc_loss}"
+            )
+
+        if i % 100 == 0:
+            with gen_summary_writer.as_default():
+                tf.summary.scalar("batch_loss", tf.reduce_mean(gen_loss), step=i)
+            with disc_summary_writer.as_default():
+                tf.summary.scalar("batch_loss", tf.reduce_mean(disc_loss), step=i)
+
+
+        # update progress bar
+        progress.update(1)
+
+    print(f"Epoch {epoch+1}: Gen Loss: {gen_loss}")
+    print(f"Epoch {epoch+1}: Disc Loss: {disc_loss}")
+    print(f"Epoch {epoch+1}: Train Loss: {train_loss_metric.result()}")
+
+    progress.close()
+
     # Save the model
-    gen.model.save(f"/home/cslfiu/dev/cnn_vscf/models/gen-{epoch}.h5")
-    disc.model.save(f"/home/cslfiu/dev/cnn_vscf/models/disc-{epoch}.h5")
+    print(f"Saving model at epoch {epoch+1}")
+    gen.model.save(f"{model_output_dir}/gen-{epoch+1}.keras")
+    disc.model.save(f"{model_output_dir}/disc-{epoch+1}.keras")
+
+    train_loss_metric.reset_state()
