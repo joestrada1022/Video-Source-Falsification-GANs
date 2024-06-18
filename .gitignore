@@ -1,3 +1,32 @@
+# Ignore macOS specific files
 **/.DS_Store
+
+# Ignore Python bytecode files
 __pycache__
+
+# Ignore Visual Studio Code specific files
 .vscode
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Ignore TensorFlow TensorBoard logs
+.tensorboard*
+
+# Ignore Trash files (usually created by file managers)
+.Trash-*
+
+# Ignore environment files
+.env
+
+# Ignore data directory (assuming it contains large files)
+data/
+
+# Ignore generated testing outputs
+generated/*
+
+# Ignore TensorFlow autograph files
+__autograph_*
+
+# Ignore compiled Python files
+*.pyc
