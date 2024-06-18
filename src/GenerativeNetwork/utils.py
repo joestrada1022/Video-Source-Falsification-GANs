@@ -5,7 +5,15 @@ from glob import glob
 import random
 from matplotlib import pyplot as plt
 
-def apply_cfa(image):
+def apply_cfa(image: np.ndarray) -> np.ndarray:
+    """Applies a Bayer filter to an image
+
+    Args:
+        image (np.ndarray): Takes in an OpenCV image in BGR format
+
+    Returns:
+        _type_: OpenCV Image of the same dimensions also in BGR format with the Bayer filter applied
+    """
     # resize before interpolation to keep dimensions the same
     image = cv2.resize(image, None, fx=3, fy=3)
     # interpolate to get the 'cubey' effect with bayer filter
@@ -24,11 +32,13 @@ def apply_cfa(image):
     cfa_image += mask_r * image
     cfa_image += mask_g * image
     cfa_image += mask_b * image
+    
     return cfa_image
 
 def display_samples(model_path, image_path=None, save_path=None):
     if image_path is None:
         image_path = random.choice(glob("data/frames/**/Validation/**/*.jpg"))
+        print(f"Using random image: {image_path}")
     model = load_model(model_path)
     img = cv2.imread(image_path)
     orig = img.copy()

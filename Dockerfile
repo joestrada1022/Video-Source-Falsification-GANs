@@ -9,5 +9,5 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install OpenCV using pip
-RUN pip install opencv-contrib-python
+RUN pip install opencv-contrib-python tqdm
 

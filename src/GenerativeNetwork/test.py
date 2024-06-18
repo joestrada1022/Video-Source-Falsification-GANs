@@ -1,6 +1,6 @@
 from datagenGAN import DataGeneratorGAN, DataSetGeneratorGAN
 import cv2
-import time
+import datetime
 
 data_path = "data/frames"
 
@@ -25,8 +25,9 @@ for i, (frames_batch, labels_batch) in enumerate(datagen):
 img = frames_batch[-1]
 img = (img * 127.5) + 127.5
 
-img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+# img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 # make custom id for image to save
-id = time.time() 
+id = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
 
 cv2.imwrite(f"generated/batch_testing/test{id}.jpg", img)
