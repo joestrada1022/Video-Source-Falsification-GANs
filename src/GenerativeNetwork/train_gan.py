@@ -90,7 +90,7 @@ gen_summary_writer = tf.summary.create_file_writer(train_log_dir + 'gen')
 disc_summary_writer = tf.summary.create_file_writer(train_log_dir + 'disc')
 
 
-EPOCHS = 1
+EPOCHS = 25
 
 # Training loop
 for epoch in range(EPOCHS):
@@ -113,11 +113,11 @@ for epoch in range(EPOCHS):
                 f"Batch {i+1}: Gen Loss: {gen_loss}, Disc Loss: {disc_loss}"
             )
 
-        if i % 100 == 0:
-            with gen_summary_writer.as_default():
-                tf.summary.scalar("batch_loss", tf.reduce_mean(gen_loss), step=i)
-            with disc_summary_writer.as_default():
-                tf.summary.scalar("batch_loss", tf.reduce_mean(disc_loss), step=i)
+        # if i % 100 == 0:
+            # with gen_summary_writer.as_default():
+            #     tf.summary.scalar("batch_loss", tf.reduce_mean(gen_loss), step=i)
+            # with disc_summary_writer.as_default():
+            #     tf.summary.scalar("batch_loss", tf.reduce_mean(disc_loss), step=i)
 
 
         # update progress bar
@@ -133,5 +133,10 @@ for epoch in range(EPOCHS):
     print(f"Saving model at epoch {epoch+1}")
     gen.model.save(f"{model_output_dir}/gen-{epoch+1}.keras")
     disc.model.save(f"{model_output_dir}/disc-{epoch+1}.keras")
+
+    with gen_summary_writer.as_default():
+        tf.summary.scalar("batch_loss", tf.reduce_mean(gen_loss), step=epoch)
+    with disc_summary_writer.as_default():
+        tf.summary.scalar("batch_loss", tf.reduce_mean(disc_loss), step=epoch)    
 
     train_loss_metric.reset_state()

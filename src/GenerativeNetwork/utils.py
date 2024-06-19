@@ -39,7 +39,10 @@ def display_samples(model_path, image_path=None, save_path=None):
     if image_path is None:
         image_path = random.choice(glob("data/frames/**/Validation/**/*.jpg"))
         print(f"Using random image: {image_path}")
-    model = load_model(model_path)
+    if type(model_path) == str:
+        model = load_model(model_path)
+    else:
+        model = model_path
     img = cv2.imread(image_path)
     orig = img.copy()
     flip = False
