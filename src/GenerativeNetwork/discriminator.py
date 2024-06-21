@@ -66,6 +66,9 @@ class Discriminator:
         act5 = layers.LeakyReLU()(conv2d_final)
         output_layer = layers.Flatten()(act5)
 
+        output_layer = layers.Dense(1)(output_layer)
+        output_layer = layers.Activation("sigmoid")(output_layer)
+
         model = Model(disc_input, output_layer)
 
         self.model_name = self.__generate_model_name()

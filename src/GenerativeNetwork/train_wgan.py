@@ -8,8 +8,8 @@ from wgan import WGAN, GANMonitor, ModelSaveCallback
 from tensorflow.keras import optimizers
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 
-generator_optimizer = optimizers.Adam(learning_rate=0.0002, beta_1=0.5, beta_2=0.9)
-discriminator_optimizer = optimizers.Adam(learning_rate=0.0002, beta_1=0.5, beta_2=0.9)
+generator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
+discriminator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
 
 
 def discriminator_loss(real_images, fake_images):

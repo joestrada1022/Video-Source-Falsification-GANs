@@ -90,12 +90,14 @@ class Generator:
         # tf.print(act2.shape)
 
         # upsample
-        upsample1 = layers.Conv2DTranspose(128, (2, 2), strides=2, use_bias=False)(act2)
+        upsample1 = layers.UpSampling2D()(act2)
+        upsample1 = layers.Conv2D(64, (2, 2), strides=1, padding="same")(upsample1)
         batch_norm3 = layers.BatchNormalization()(upsample1)
         act3 = layers.LeakyReLU()(batch_norm3)
         # tf.print(act3.shape)
 
-        upsample2 = layers.Conv2DTranspose(64, (2, 2), strides=2, use_bias=False)(act3)
+        upsample2 = layers.UpSampling2D()(act3)
+        upsample2 = layers.Conv2D(3, (2, 2), strides=1, padding="same")(upsample2)
         batch_norm4 = layers.BatchNormalization()(upsample2)
         act4 = layers.LeakyReLU()(batch_norm4)
         # tf.print(act4.shape)

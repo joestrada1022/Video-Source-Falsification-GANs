@@ -101,7 +101,7 @@ class GANMonitor(Callback):
     def on_epoch_end(self, epoch, logs=None):
         for i in range(self.num_img):
             img = display_samples(
-                self.model.generator, save_path=f"generated/models/img_{i}_epoch_{epoch}.png"
+                self.model.generator, save_path=f"generated/images/img_{i}_epoch_{epoch}.png"
             )
 
 class ModelSaveCallback(Callback):
