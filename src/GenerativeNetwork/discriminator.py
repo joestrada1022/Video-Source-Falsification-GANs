@@ -4,61 +4,81 @@ from tensorflow.keras.models import Model  # type: ignore
 
 
 class Discriminator:
-    def __init__(self, input_shape, num_classes):
+    def __init__(self, input_shape):
         self.model = None
         self.model_name = None
         self.input_width, self.input_height, self.input_channels = input_shape
-        self.num_classes = num_classes
 
-    def __generate_model_name(self):
-        model_name = f"Discriminator"
+    def __generate_model_name(self) -> str:
+            """
+            Generates a model name for the discriminator.
 
-        return model_name
+            Returns:
+                str: The generated model name.
+            """
+            model_name = f"Discriminator"
 
-    """
-    According to DCGAN, "Directly applying batchnorm to all layers however, 
-    resulted in sample oscillation and model instability. 
-    This was avoided by not applying batchnorm to the generator 
-    output layer and the discriminator input layer."
-    """
+            return model_name
 
-    # no batch norm for WGAN discriminator
+
     def create_model(self, model_name=None):
+        """
+        Creates and returns a discriminator model. 
+        
+        - The model is a simple discriminator model
+        - no batch normalization is used
+        - output is flattened followed by sigmoid activation to get a prediction
+
+        Returns:
+            Model: The discriminator model.
+        """
+        # Define the shape of the input
         shape = (self.input_width, self.input_height, self.input_channels)
         disc_input = layers.Input(shape=shape)
 
-        conv2d_1 = layers.Conv2D(64, kernel_size=4, strides=2, padding="same")(
-            disc_input
-        )
-        # no batch norm for input layer of disc
-        act1 = layers.LeakyReLU()(conv2d_1)
-        dropout1 = layers.Dropout(0.25)(act1)
+        # First convolutional layer
+        x = layers.Conv2D(64, kernel_size=4, strides=2, padding="same")(disc_input)
+        x = layers.LeakyReLU()(x)
+        x = layers.Dropout(0.25)(x)
 
-        conv2d_2 = layers.Conv2D(128, kernel_size=4, strides=2, padding="same")(
-            dropout1
-        )
-        # batch_norm1 = layers.BatchNormalization()(conv2d_2)
-        act2 = layers.LeakyReLU()(conv2d_2)
-        dropout2 = layers.Dropout(0.25)(act2)
+        # Second convolutional layer
+        x = layers.Conv2D(128, kernel_size=4, strides=2, padding="same")(x)
+        x = layers.LeakyReLU()(x)
+        x = layers.Dropout(0.25)(x)
 
-        conv2d_final = layers.Conv2D(
-            1, kernel_size=4, strides=1, padding="valid"
-        )(dropout2)
-        act5 = layers.LeakyReLU()(conv2d_final)
-        output_layer = layers.Flatten()(act5)
+        # Final convolutional layer
+        x = layers.Conv2D(1, kernel_size=4, strides=1, padding="valid")(x)
+        x = layers.LeakyReLU()(x)
+        x = layers.Flatten()(x)
 
-        output_layer = layers.Dense(1)(output_layer)
-        output_layer = layers.Activation("sigmoid")(output_layer)
+        # Output layer
+        x = layers.Dense(1)(x)
+        x = layers.Activation("sigmoid")(x)
 
+        output_layer = x
+
+        # Create the model
         model = Model(disc_input, output_layer)
 
+        # Generate the model name
         self.model_name = self.__generate_model_name()
+
+        # Set the model
         self.model = model
 
+        # Return the model
         return model
 
-    def print_model_summary(self):
-        if self.model is None:
-            print("Can't print model summary, self.model is None!")
-        else:
-            print(f"\nSummary of model:\n{self.model.summary()}")
+    def print_model_summary(self) -> None:
+            """
+            Prints the summary of the model.
+
+            If the model is None, it prints an error message.
+
+            Returns:
+                None
+            """
+            if self.model is None:
+                print("Can't print model summary, self.model is None!")
+            else:
+                print(f"\nSummary of model:\n{self.model.summary()}")
