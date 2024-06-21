@@ -27,6 +27,7 @@ class Discriminator:
     output layer and the discriminator input layer."
     """
 
+    # no batch norm for WGAN discriminator
     def create_model(self, model_name=None):
         shape = (self.input_width, self.input_height, self.input_channels)
         disc_input = layers.Input(shape=shape)
@@ -41,28 +42,29 @@ class Discriminator:
         conv2d_2 = layers.Conv2D(128, kernel_size=4, strides=2, padding="same")(
             dropout1
         )
-        batch_norm1 = layers.BatchNormalization()(conv2d_2)
-        act2 = layers.LeakyReLU()(batch_norm1)
+        # batch_norm1 = layers.BatchNormalization()(conv2d_2)
+        act2 = layers.LeakyReLU()(conv2d_2)
         dropout2 = layers.Dropout(0.25)(act2)
 
         conv2d_3 = layers.Conv2D(256, kernel_size=4, strides=2, padding="same")(
             dropout2
         )
-        batch_norm2 = layers.BatchNormalization()(conv2d_3)
-        act3 = layers.LeakyReLU()(batch_norm2)
+        # batch_norm2 = layers.BatchNormalization()(conv2d_3)
+        act3 = layers.LeakyReLU()(conv2d_3)
         dropout3 = layers.Dropout(0.25)(act3)
 
         conv2d_4 = layers.Conv2D(512, kernel_size=4, strides=2, padding="same")(
             dropout3
         )
-        batch_norm3 = layers.BatchNormalization()(conv2d_4)
-        act4 = layers.LeakyReLU()(batch_norm3)
+        # batch_norm3 = layers.BatchNormalization()(conv2d_4)
+        act4 = layers.LeakyReLU()(conv2d_4)
         dropout4 = layers.Dropout(0.25)(act4)
 
         conv2d_final = layers.Conv2D(
-            1, kernel_size=4, strides=1, padding="valid", activation="tanh"
+            1, kernel_size=4, strides=1, padding="valid"
         )(dropout4)
-        output_layer = layers.Flatten()(conv2d_final)
+        act5 = layers.LeakyReLU()(conv2d_final)
+        output_layer = layers.Flatten()(act5)
 
         model = Model(disc_input, output_layer)
 

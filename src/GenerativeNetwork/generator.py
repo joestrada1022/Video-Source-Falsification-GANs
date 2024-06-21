@@ -6,6 +6,7 @@ from tensorflow.keras.callbacks import TensorBoard  # type: ignore
 from tensorflow.keras import layers  # type: ignore
 from tensorflow.keras.models import Model  # type: ignore
 import os
+from utils import apply_cfa
 
 
 class Generator:

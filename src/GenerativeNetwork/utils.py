@@ -39,13 +39,18 @@ def display_samples(model_path, image_path=None, save_path=None):
     if image_path is None:
         image_path = random.choice(glob("data/frames/**/Validation/**/*.jpg"))
         print(f"Using random image: {image_path}")
-    model = load_model(model_path)
+    if type(model_path) == str:
+        model = load_model(model_path)
+    else:
+        model = model_path
     img = cv2.imread(image_path)
     orig = img.copy()
     flip = False
     if img.shape[0] == 1920 and img.shape[1] == 1080:
         img = np.transpose(img, (1, 0, 2))
         flip = True
+    height, width = img.shape[:2]
+    img = cv2.resize(img, (width//2, height//2))
     img = (img - 127.5) / 127.5
     img = np.expand_dims(img, axis=0)
 
@@ -54,9 +59,9 @@ def display_samples(model_path, image_path=None, save_path=None):
     output = output[0]
     if flip:
         output = np.transpose(output, (1, 0, 2))
-
     output = output.astype(np.uint8)
     output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
+    orig = cv2.cvtColor(orig, cv2.COLOR_BGR2RGB)
     # display original and output images side by side matplotlib
     fig, axes = plt.subplots(1, 2)
     axes[0].imshow(orig)

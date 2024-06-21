@@ -1,5 +1,5 @@
 import numpy as np
-from tensorflow.python.keras.utils.data_utils import Sequence
+from tensorflow.keras.utils import Sequence
 import tensorflow as tf
 import cv2
 
@@ -51,7 +51,7 @@ class DataGeneratorGAN(Sequence):
             np.random.shuffle(self.indexes)
 
     def __generate_frames_ds__(self, list_IDs_temp):
-        frame_ds = np.empty((self.batch_size, 1080, 1920, 3), dtype=np.float32)
+        frame_ds = np.empty((self.batch_size, 1080//2, 1920//2, 3), dtype=np.float32)
         labels_ds = np.empty((self.batch_size, self.num_classes), dtype=np.float32)
         for i, id in enumerate(list_IDs_temp):
             key = "item_ID"
@@ -70,8 +70,10 @@ class DataGeneratorGAN(Sequence):
         # if dimensions are 1920x1080 switch to 1080x1920
         if img.shape[0] == 1920 and img.shape[1] == 1080:
             img = np.transpose(img, (1, 0, 2))
+        height, width = img.shape[:2]
+        img = cv2.resize(img, (width//2, height//2))
         
-        img = apply_cfa(img)
+        # img = apply_cfa(img)
         # Normalize the pixel values
         img = tf.cast(img, tf.float32)
         img = (img - 127.5) / 127.5
