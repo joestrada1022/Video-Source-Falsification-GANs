@@ -98,17 +98,15 @@ class WGAN(Model):
 
 
 class GANMonitor(Callback):
-    def __init__(
-        self,
-        num_img=3,
-    ):
+    def __init__(self, save_path, num_img=3):
         self.num_img = num_img
+        self.save_path = save_path
 
     def on_epoch_end(self, epoch, logs=None):
         for i in range(self.num_img):
             img = display_samples(
                 self.model.generator,
-                save_path=f"generated/images/img_{i}_epoch_{epoch}.png",
+                save_path=f"{self.save_path}/epoch_{epoch}_img{i}.png",
             )
 
 
