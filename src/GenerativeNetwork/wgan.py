@@ -1,7 +1,7 @@
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.callbacks import Callback
-from tensorflow.keras import metrics
+from tensorflow.keras.models import Model #type: ignore
+from tensorflow.keras.callbacks import Callback #type: ignore
+from tensorflow.keras import metrics #type: ignore
 from utils import display_samples
 
 
