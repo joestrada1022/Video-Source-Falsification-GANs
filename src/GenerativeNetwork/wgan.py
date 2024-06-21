@@ -101,5 +101,16 @@ class GANMonitor(Callback):
     def on_epoch_end(self, epoch, logs=None):
         for i in range(self.num_img):
             img = display_samples(
-                self.model.generator, save_path=f"img_{i}_epoch_{epoch}.png"
+                self.model.generator, save_path=f"generated/models/img_{i}_epoch_{epoch}.png"
             )
+
+class ModelSaveCallback(Callback):
+    def __init__(self, generator, discriminator, save_path):
+        super().__init__()
+        self.generator = generator
+        self.discriminator = discriminator
+        self.save_path = save_path
+
+    def on_epoch_end(self, epoch, logs=None):
+        self.generator.save(f"{self.save_path}/generator_epoch_{epoch}.keras")
+        self.discriminator.save(f"{self.save_path}/discriminator_epoch_{epoch}.keras")

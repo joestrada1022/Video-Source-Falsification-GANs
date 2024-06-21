@@ -8,7 +8,7 @@ save_path = None
 image_path = 'data/frames/Galaxi-A50/Validation/Samsung-A50-2(299)/Samsung-A50-2(299).mp4_011.jpg'
 image_path = None
 
-display_samples("generated/models/gan20240618-211659/gen-24.keras", image_path=image_path, save_path=save_path)
+display_samples("generated/models/final_gen.keras", image_path=image_path, save_path=save_path)
 
 # img = cv2.imread(image_path)
 # img = apply_cfa(img)
