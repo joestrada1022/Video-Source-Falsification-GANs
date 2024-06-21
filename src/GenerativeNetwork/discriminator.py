@@ -1,11 +1,6 @@
-import tensorflow as tf
-import numpy as np
-
 from tensorflow.keras.callbacks import TensorBoard  # type: ignore
 from tensorflow.keras import layers  # type: ignore
 from tensorflow.keras.models import Model  # type: ignore
-
-import os
 
 
 class Discriminator:
@@ -46,23 +41,9 @@ class Discriminator:
         act2 = layers.LeakyReLU()(conv2d_2)
         dropout2 = layers.Dropout(0.25)(act2)
 
-        conv2d_3 = layers.Conv2D(256, kernel_size=4, strides=2, padding="same")(
-            dropout2
-        )
-        # batch_norm2 = layers.BatchNormalization()(conv2d_3)
-        act3 = layers.LeakyReLU()(conv2d_3)
-        dropout3 = layers.Dropout(0.25)(act3)
-
-        conv2d_4 = layers.Conv2D(512, kernel_size=4, strides=2, padding="same")(
-            dropout3
-        )
-        # batch_norm3 = layers.BatchNormalization()(conv2d_4)
-        act4 = layers.LeakyReLU()(conv2d_4)
-        dropout4 = layers.Dropout(0.25)(act4)
-
         conv2d_final = layers.Conv2D(
             1, kernel_size=4, strides=1, padding="valid"
-        )(dropout4)
+        )(dropout2)
         act5 = layers.LeakyReLU()(conv2d_final)
         output_layer = layers.Flatten()(act5)
 

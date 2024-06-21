@@ -12,15 +12,6 @@ generator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0
 discriminator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
 
 
-def discriminator_loss(real_images, fake_images):
-    real_loss = tf.reduce_mean(real_images)
-    fake_loss = tf.reduce_mean(fake_images)
-    return fake_loss - real_loss
-
-
-def generator_loss(fake_image):
-    return -tf.reduce_mean(fake_image)
-
 
 EPOCHS = 25
 BATCH_SIZE = 12
@@ -55,8 +46,6 @@ wgangp = WGAN(discriminator=disc.model, generator=gen.model, input_shape=shape)
 wgangp.compile(
     d_optimizer=discriminator_optimizer,
     g_optimizer=generator_optimizer,
-    d_loss_fn=discriminator_loss,
-    g_loss_fn=generator_loss,
 )
 
 wgangp.fit(

@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import Callback
+from tensorflow.keras import metrics
 from utils import display_samples
 
 
@@ -20,12 +21,18 @@ class WGAN(Model):
         self.d_steps = discriminator_extra_steps
         self.gp_weight = gp_weight
 
-    def compile(self, d_optimizer, g_optimizer, d_loss_fn, g_loss_fn):
+    def compile(self, d_optimizer, g_optimizer):
         super().compile()
         self.d_optimizer = d_optimizer
         self.g_optimizer = g_optimizer
-        self.d_loss_fn = d_loss_fn
-        self.g_loss_fn = g_loss_fn
+        self.d_wass_loss = metrics.Mean(name="d_wasserstein_loss")
+        self.d_gp = metrics.Mean(name="d_gradient_penalty")
+        self.g_loss = metrics.Mean(name="g_loss")
+        self.d_loss = metrics.Mean(name="d_loss")
+
+    @property
+    def metrics(self):
+        return [self.d_loss, self.d_wass_loss, self.d_gp, self.g_loss]
 
     def gradient_penalty(self, batch_size, real_images, fake_images):
         alpha = tf.random.uniform([batch_size, 1, 1, 1], 0.0, 1.0)
@@ -57,38 +64,37 @@ class WGAN(Model):
                 # generate fake images
                 fake_images = self.generator(real_images, training=True)
                 # get discriminator output for real and fake images
-                fake_logits = self.discriminator(fake_images, training=True)
-                real_logits = self.discriminator(real_images, training=True)
+                fake_predictions = self.discriminator(fake_images, training=True)
+                real_Predictions = self.discriminator(real_images, training=True)
 
-                # calculate discriminator loss
-                d_cost = self.d_loss_fn(
-                    real_images=real_logits, fake_images=fake_logits
+                d_wass_loss = tf.reduce_mean(fake_predictions) - tf.reduce_mean(
+                    real_Predictions
                 )
-                # calculate gradient penalty
-                gp = self.gradient_penalty(batch_size, real_images, fake_images)
-                # add the gp to the discriminator loss
-                d_loss = d_cost + gp * self.gp_weight
+                d_gp = self.gradient_penalty(batch_size, real_images, fake_images)
+                d_loss = d_wass_loss + d_gp * self.gp_weight
 
-            # get the gradients with respect to the discriminator loss
-            d_gradient = tape.gradient(d_loss, self.discriminator.trainable_variables)
-
+            d_gradients = tape.gradient(d_loss, self.discriminator.trainable_variables)
             self.d_optimizer.apply_gradients(
-                zip(d_gradient, self.discriminator.trainable_variables)
+                zip(d_gradients, self.discriminator.trainable_variables)
             )
+
         # train generator
         with tf.GradientTape() as tape:
-            # generate fake images
             generated_images = self.generator(real_images, training=True)
-            gen_img_logits = self.discriminator(generated_images, training=True)
-            g_loss = self.g_loss_fn(gen_img_logits)
+            gen_predictions = self.discriminator(generated_images, training=True)
+            g_loss = -tf.reduce_mean(gen_predictions)
 
-        # get the gradients with respect to the generator loss
-        gen_gradient = tape.gradient(g_loss, self.generator.trainable_variables)
+        g_gradients = tape.gradient(g_loss, self.generator.trainable_variables)
         self.g_optimizer.apply_gradients(
-            zip(gen_gradient, self.generator.trainable_variables)
+            zip(g_gradients, self.generator.trainable_variables)
         )
 
-        return {"d_loss": d_loss, "g_loss": g_loss}
+        self.d_loss.update_state(d_loss)
+        self.d_wass_loss.update_state(d_wass_loss)
+        self.d_gp.update_state(d_gp)
+        self.g_loss.update_state(g_loss)
+
+        return {m.name: m.result() for m in self.metrics}
 
 
 class GANMonitor(Callback):
@@ -101,8 +107,10 @@ class GANMonitor(Callback):
     def on_epoch_end(self, epoch, logs=None):
         for i in range(self.num_img):
             img = display_samples(
-                self.model.generator, save_path=f"generated/images/img_{i}_epoch_{epoch}.png"
+                self.model.generator,
+                save_path=f"generated/images/img_{i}_epoch_{epoch}.png",
             )
+
 
 class ModelSaveCallback(Callback):
     def __init__(self, generator, discriminator, save_path):
