@@ -37,7 +37,9 @@ def apply_cfa(image: np.ndarray) -> np.ndarray:
 
 def display_samples(model_path, image_path=None, save_path=None):
     if image_path is None:
-        image_path = random.choice(glob("data/frames/**/Validation/**/*.jpg"))
+        image_paths = glob("data/frames/**/Validation/**/*.jpg")
+        # random.shuffle(image_paths)
+        image_path = random.choice(image_paths)
         print(f"Using random image: {image_path}")
     if type(model_path) == str:
         model = load_model(model_path)
