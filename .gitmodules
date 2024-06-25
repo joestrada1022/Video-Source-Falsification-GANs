@@ -1,0 +1,3 @@
+[submodule "scd-videos"]
+	path = scd-videos
+	url = git@github.com:joestrada1022/scd-videos.git
