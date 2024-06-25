@@ -3,6 +3,8 @@ from tensorflow.keras.models import Model #type: ignore
 from tensorflow.keras.callbacks import Callback #type: ignore
 from tensorflow.keras import metrics #type: ignore
 from utils import display_samples
+from glob import glob
+import random
 
 
 class WGAN(Model):
@@ -10,16 +12,22 @@ class WGAN(Model):
         self,
         discriminator,
         generator,
+        classifier,
         input_shape,
         discriminator_extra_steps=3,
         gp_weight=10.0,
+        cls_weight=1.0,     # TODO: adjust value
     ):
         super().__init__()
         self.discriminator = discriminator
         self.generator = generator
+        self.classifier = classifier
+
         self.input_shape = input_shape
         self.d_steps = discriminator_extra_steps
+
         self.gp_weight = gp_weight
+        self.cls_weight = cls_weight
 
     def compile(self, d_optimizer, g_optimizer):
         super().compile()
@@ -29,10 +37,11 @@ class WGAN(Model):
         self.d_gp = metrics.Mean(name="d_gradient_penalty")
         self.g_loss = metrics.Mean(name="g_loss")
         self.d_loss = metrics.Mean(name="d_loss")
+        self.cls_loss = metrics.Mean(name="cls_loss")
 
     @property
     def metrics(self):
-        return [self.d_loss, self.d_wass_loss, self.d_gp, self.g_loss]
+        return [self.d_loss, self.d_wass_loss, self.d_gp, self.g_loss, self.cls_loss]
 
     def gradient_penalty(self, batch_size, real_images, fake_images):
         alpha = tf.random.uniform([batch_size, 1, 1, 1], 0.0, 1.0)
@@ -52,21 +61,26 @@ class WGAN(Model):
         return gp
 
     # @tf.function # if training slow, turn this on
-    def train_step(self, real_images):
-        if isinstance(real_images, tuple):
-            real_images = real_images[0]
+    def train_step(self, data):
+        if isinstance(data, tuple) and len(data) == 2:
+            real_images, real_labels = data
+        else:
+            raise ValueError("Expected data format: (images, labels)")
         # get batch size
         batch_size = tf.shape(real_images)[0]
+        # generate random labels that are not equal to the real labels
+        target_labels = tf.roll(real_labels, shift=1, axis=1)
 
         # train discriminator
         for i in range(self.d_steps):
             with tf.GradientTape() as tape:
                 # generate fake images
-                fake_images = self.generator(real_images, training=True)
+                fake_images = self.generator([real_images, target_labels], training=True)
                 # get discriminator output for real and fake images
                 fake_predictions = self.discriminator(fake_images, training=True)
                 real_Predictions = self.discriminator(real_images, training=True)
 
+                # calculate wasserstein loss
                 d_wass_loss = tf.reduce_mean(fake_predictions) - tf.reduce_mean(
                     real_Predictions
                 )
@@ -80,9 +94,18 @@ class WGAN(Model):
 
         # train generator
         with tf.GradientTape() as tape:
-            generated_images = self.generator(real_images, training=True)
+            # calculate adversarial loss
+            generated_images = self.generator([real_images, target_labels], training=True)
             gen_predictions = self.discriminator(generated_images, training=True)
+            
             g_loss = -tf.reduce_mean(gen_predictions)
+
+            # calculate classification loss
+            cls_predictions = self.classifier(generated_images, training=False)
+            cls_loss = -tf.reduce_mean(tf.keras.losses.categorical_crossentropy(real_labels, cls_predictions)) # invert the loss for untargeted attacks
+
+            # add other losses to the generator loss
+            g_loss += cls_loss * self.cls_weight
 
         g_gradients = tape.gradient(g_loss, self.generator.trainable_variables)
         self.g_optimizer.apply_gradients(
@@ -93,6 +116,7 @@ class WGAN(Model):
         self.d_wass_loss.update_state(d_wass_loss)
         self.d_gp.update_state(d_gp)
         self.g_loss.update_state(g_loss)
+        self.cls_loss.update_state(cls_loss)
 
         return {m.name: m.result() for m in self.metrics}
 
@@ -101,12 +125,17 @@ class GANMonitor(Callback):
     def __init__(self, save_path, num_img=3):
         self.num_img = num_img
         self.save_path = save_path
+        imgs = []
+        for i in range(num_img):
+            imgs[i] = random.choice(glob("data/frames/**/Validation/**/*.jpg")) #TODO: make this path based on arguments
+        self.images = imgs
 
     def on_epoch_end(self, epoch, logs=None):
         for i in range(self.num_img):
             img = display_samples(
                 self.model.generator,
                 save_path=f"{self.save_path}/epoch_{epoch}_img{i}.png",
+                image_path=self.images[i],
             )
 
 

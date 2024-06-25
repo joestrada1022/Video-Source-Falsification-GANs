@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from tensorflow.keras import optimizers # type: ignore
 from tensorflow.keras.callbacks import TensorBoard # type: ignore
+from tensorflow.keras.models import load_model # type: ignore
 
 import argparse
 
@@ -19,7 +20,7 @@ parser.add_argument("--tensorboard_path", type=str, required=True, help="Path to
 
 if __name__ == "__main__":
 
-    EPOCHS = 25
+    EPOCHS = 2
     BATCH_SIZE = 12
 
     # parse arguments
@@ -44,9 +45,11 @@ if __name__ == "__main__":
     gen.create_model()
     gen.print_model_summary()
 
-    disc = Discriminator(shape, num_classes)
+    disc = Discriminator(shape)
     disc.create_model()
     disc.print_model_summary()
+
+    classifier = load_model('/home/cslfiu/dev/cnn_vscf/scd-videos/results/12_frames_pred/mobile_net/models/MobileNet_12/fm-e00020.h5')
 
     # create callbacks
     image_callback = GANMonitor(save_path=image_path)
@@ -58,7 +61,7 @@ if __name__ == "__main__":
     discriminator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
 
     # compile and train
-    wgangp = WGAN(discriminator=disc.model, generator=gen.model, input_shape=shape)
+    wgangp = WGAN(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape)
 
     wgangp.compile(
         d_optimizer=discriminator_optimizer,
