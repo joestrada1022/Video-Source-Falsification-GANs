@@ -37,12 +37,12 @@ class Discriminator:
         disc_input = layers.Input(shape=shape)
 
         # First convolutional layer
-        x = layers.Conv2D(64, kernel_size=4, strides=2, padding="same")(disc_input)
+        x = layers.Conv2D(32, kernel_size=3, strides=2, padding="same")(disc_input)
         x = layers.LeakyReLU()(x)
         x = layers.Dropout(0.25)(x)
 
         # Second convolutional layer
-        x = layers.Conv2D(128, kernel_size=4, strides=2, padding="same")(x)
+        x = layers.Conv2D(64, kernel_size=3, strides=2, padding="same")(x)
         x = layers.LeakyReLU()(x)
         x = layers.Dropout(0.25)(x)
 

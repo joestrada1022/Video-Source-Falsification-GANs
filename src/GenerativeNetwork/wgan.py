@@ -60,7 +60,14 @@ class WGAN(Model):
         gp = tf.reduce_mean((norm - 1.0) ** 2)
         return gp
 
-    # @tf.function # if training slow, turn this on
+    def classifier_loss(self, generated_images, real_labels):
+        generated_images = tf.image.resize(generated_images, (480, 800))
+        cls_predictions = self.classifier(generated_images, training=False)
+        cls_loss = -tf.reduce_mean(tf.keras.losses.categorical_crossentropy(real_labels, cls_predictions['output_0']))
+
+        return cls_loss
+
+    # @tf.function # if training slow, turn this one
     def train_step(self, data):
         if isinstance(data, tuple) and len(data) == 2:
             real_images, real_labels = data
@@ -101,9 +108,8 @@ class WGAN(Model):
             g_loss = -tf.reduce_mean(gen_predictions)
 
             # calculate classification loss
-            cls_predictions = self.classifier(generated_images, training=False)
-            cls_loss = -tf.reduce_mean(tf.keras.losses.categorical_crossentropy(real_labels, cls_predictions)) # invert the loss for untargeted attacks
-
+            with tf.device('/cpu:0'):
+                cls_loss = self.classifier_loss(generated_images, real_labels)
             # add other losses to the generator loss
             g_loss += cls_loss * self.cls_weight
 
@@ -126,8 +132,8 @@ class GANMonitor(Callback):
         self.num_img = num_img
         self.save_path = save_path
         imgs = []
-        for i in range(num_img):
-            imgs[i] = random.choice(glob("data/frames/**/Validation/**/*.jpg")) #TODO: make this path based on arguments
+        for i in range(self.num_img):
+            imgs.append(random.choice(glob("data/frames/**/Validation/**/*.jpg"))) #TODO: make this path based on arguments
         self.images = imgs
 
     def on_epoch_end(self, epoch, logs=None):
