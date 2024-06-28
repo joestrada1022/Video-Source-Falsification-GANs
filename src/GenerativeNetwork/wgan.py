@@ -1,7 +1,7 @@
 import tensorflow as tf
-from tensorflow.keras.models import Model #type: ignore
-from tensorflow.keras.callbacks import Callback #type: ignore
-from tensorflow.keras import metrics #type: ignore
+from tensorflow.keras.models import Model  # type: ignore
+from tensorflow.keras.callbacks import Callback  # type: ignore
+from tensorflow.keras import metrics  # type: ignore
 from utils import display_samples
 from glob import glob
 import random
@@ -16,7 +16,7 @@ class WGAN(Model):
         input_shape,
         discriminator_extra_steps=3,
         gp_weight=10.0,
-        cls_weight=1.0,     # TODO: adjust value
+        cls_weight=1.0,  # TODO: adjust value
     ):
         super().__init__()
         self.discriminator = discriminator
@@ -60,10 +60,16 @@ class WGAN(Model):
         gp = tf.reduce_mean((norm - 1.0) ** 2)
         return gp
 
-    def classifier_loss(self, generated_images, real_labels):
+    def classifier_loss(
+        self, generated_images, target_labels
+    ):
         generated_images = tf.image.resize(generated_images, (480, 800))
         cls_predictions = self.classifier(generated_images, training=False)
-        cls_loss = -tf.reduce_mean(tf.keras.losses.categorical_crossentropy(real_labels, cls_predictions['output_0']))
+        cls_loss = tf.reduce_mean(
+            tf.keras.losses.categorical_crossentropy(
+                target_labels, cls_predictions["output_0"]
+            )
+        )
 
         return cls_loss
 
@@ -82,7 +88,9 @@ class WGAN(Model):
         for i in range(self.d_steps):
             with tf.GradientTape() as tape:
                 # generate fake images
-                fake_images = self.generator([real_images, target_labels], training=True)
+                fake_images = self.generator(
+                    [real_images, target_labels], training=True
+                )
                 # get discriminator output for real and fake images
                 fake_predictions = self.discriminator(fake_images, training=True)
                 real_Predictions = self.discriminator(real_images, training=True)
@@ -102,14 +110,16 @@ class WGAN(Model):
         # train generator
         with tf.GradientTape() as tape:
             # calculate adversarial loss
-            generated_images = self.generator([real_images, target_labels], training=True)
+            generated_images = self.generator(
+                [real_images, target_labels], training=True
+            )
             gen_predictions = self.discriminator(generated_images, training=True)
-            
+
             g_loss = -tf.reduce_mean(gen_predictions)
 
             # calculate classification loss
-            with tf.device('/cpu:0'):
-                cls_loss = self.classifier_loss(generated_images, real_labels)
+            # with tf.device("/cpu:0"):
+            cls_loss = self.classifier_loss(generated_images, target_labels)
             # add other losses to the generator loss
             g_loss += cls_loss * self.cls_weight
 
@@ -128,24 +138,63 @@ class WGAN(Model):
 
 
 class GANMonitor(Callback):
+    """
+    Callback for monitoring and saving generated images during training.
+    Shows the progression of the same generated image after each epoch.
+
+    Args:
+        save_path (str): The directory path where the generated images will be saved.
+        num_img (int, optional): The number of images to generate and save. Defaults to 3.
+    """
+
     def __init__(self, save_path, num_img=3):
         self.num_img = num_img
         self.save_path = save_path
         imgs = []
         for i in range(self.num_img):
-            imgs.append(random.choice(glob("data/frames/**/Validation/**/*.jpg"))) #TODO: make this path based on arguments
+            imgs.append(
+                random.choice(glob("data/frames/**/Validation/**/*.jpg"))
+            )
         self.images = imgs
 
     def on_epoch_end(self, epoch, logs=None):
+        """
+        Callback function called at the end of each epoch.
+
+        Args:
+            epoch (int): The current epoch number.
+            logs (dict, optional): Dictionary containing the training metrics for the current epoch. Defaults to None.
+        """
         for i in range(self.num_img):
             img = display_samples(
                 self.model.generator,
                 save_path=f"{self.save_path}/epoch_{epoch}_img{i}.png",
                 image_path=self.images[i],
+                show=False,
             )
 
 
 class ModelSaveCallback(Callback):
+    """
+    Callback to save the generator and discriminator models at the end of each epoch.
+
+    Args:
+        generator (tf.keras.Model): The generator model.
+        discriminator (tf.keras.Model): The discriminator model.
+        save_path (str): The directory path to save the models.
+
+    Methods:
+        on_epoch_end(epoch, logs=None):
+            Saves the generator and discriminator models at the end of each epoch.
+
+    Example:
+        generator = create_generator_model()
+        discriminator = create_discriminator_model()
+        save_path = "/path/to/save/models"
+        callback = ModelSaveCallback(generator, discriminator, save_path)
+        model.fit(x_train, y_train, callbacks=[callback])
+    """
+
     def __init__(self, generator, discriminator, save_path):
         super().__init__()
         self.generator = generator
@@ -153,5 +202,15 @@ class ModelSaveCallback(Callback):
         self.save_path = save_path
 
     def on_epoch_end(self, epoch, logs=None):
+        """
+        Saves the generator and discriminator models at the end of each epoch.
+
+        Args:
+            epoch (int): The current epoch number.
+            logs (dict): Dictionary containing the training metrics for the current epoch.
+
+        Returns:
+            None
+        """
         self.generator.save(f"{self.save_path}/generator_epoch_{epoch}.keras")
         self.discriminator.save(f"{self.save_path}/discriminator_epoch_{epoch}.keras")

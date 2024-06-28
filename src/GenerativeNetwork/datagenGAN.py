@@ -11,7 +11,8 @@ from glob import glob
 from utils import apply_cfa
 
 class DataGeneratorGAN(Sequence):
-    def __init__(self,frames_path_dict, num_classes, batch_size=32, to_fit=True, shuffle=True):
+    def __init__(self,frames_path_dict, num_classes, batch_size=32, to_fit=True, shuffle=True, **kwargs):
+        super().__init__(**kwargs)
         self.frames_path_dict = frames_path_dict
         self.to_fit = to_fit
         self.num_classes = num_classes
