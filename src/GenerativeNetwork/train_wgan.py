@@ -20,7 +20,8 @@ parser.add_argument("--data_path", type=str, required=True, help="Path to the da
 parser.add_argument("--image_path", type=str, required=True, help="Path to the image callback output folder")
 parser.add_argument("--model_path", type=str, required=True, help="Path to the model output folder")
 parser.add_argument("--tensorboard_path", type=str, required=True, help="Path to the tensorboard output")
-parser.add_argument("--use_gpu", type=bool, default=False, help="Use GPU for training")
+parser.add_argument("--classifier_path", type=str, required=True, help="Path to the external classifier")
+parser.add_argument("--use_cpu", type=bool, default=False, help="Use CPU for training")
 
 if __name__ == "__main__":
 
@@ -33,20 +34,21 @@ if __name__ == "__main__":
     model_path = args.model_path
     tensor_board_path = args.tensorboard_path
     image_path = args.image_path
-    use_gpu = args.use_gpu
+    classifier_path = args.classifier_path
+    use_cpu = args.use_cpu
 
-    # set GPU
-    if use_gpu:
+    # set CPU
+    if use_cpu:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    else:
         physical_devices = tf.config.list_physical_devices('GPU')
         tf.config.experimental.set_memory_growth(physical_devices[0], True)
-    else:
-        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     # create dataset
     dataset_maker = DataSetGeneratorGAN(dataset_path)
 
-    train = dataset_maker.create_dataset()
-    print(f"Train dataset contains {len(train)} samples")
+    train_set = dataset_maker.create_dataset()
+    print(f"Train dataset contains {len(train_set)} samples")
 
     num_classes = len(dataset_maker.get_class_names())
 
@@ -62,12 +64,11 @@ if __name__ == "__main__":
     disc.print_model_summary()
 
     # load pre-trained classifier
-    path = 'scd-videos/saved_model'
-    print('File Exists: ', os.path.exists(path))
-    classifier = keras.layers.TFSMLayer(path, call_endpoint='serving_default')
+    print('File Exists: ', os.path.exists(classifier_path))
+    classifier = keras.layers.TFSMLayer(classifier_path, call_endpoint='serving_default')
 
     # create callbacks
-    image_callback = GANMonitor(save_path=image_path)
+    image_callback = GANMonitor(data_path=dataset_path, save_path=image_path)
     model_callback = ModelSaveCallback(gen.model, disc.model, model_path)
     tensorboard_callback = TensorBoard(log_dir=tensor_board_path)
 
@@ -84,13 +85,13 @@ if __name__ == "__main__":
     )
 
     wgangp.fit(
-        DataGeneratorGAN(train, num_classes, BATCH_SIZE),
+        DataGeneratorGAN(train_set, num_classes, BATCH_SIZE),
         epochs=EPOCHS,
         initial_epoch=0,
         callbacks=[model_callback, tensorboard_callback, image_callback],
     )
 
-    gen.model.save("generated/models/final_gen.keras")
-    disc.model.save("generated/models/final_disc.keras")
+    gen.model.save(model_path + "/final_gen.keras")
+    disc.model.save(model_path + "/final_disc.keras")
 
     print("Training complete")

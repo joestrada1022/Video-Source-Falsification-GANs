@@ -3,6 +3,7 @@ from tensorflow.keras.models import Model  # type: ignore
 from tensorflow.keras.callbacks import Callback  # type: ignore
 from tensorflow.keras import metrics  # type: ignore
 from utils import display_samples
+from pathlib import Path
 from glob import glob
 import random
 
@@ -147,13 +148,13 @@ class GANMonitor(Callback):
         num_img (int, optional): The number of images to generate and save. Defaults to 3.
     """
 
-    def __init__(self, save_path, num_img=3):
+    def __init__(self, data_path, save_path, num_img=3):
         self.num_img = num_img
         self.save_path = save_path
         imgs = []
         for i in range(self.num_img):
             imgs.append(
-                random.choice(glob("data/frames/**/Validation/**/*.jpg"))
+                random.choice(glob(f"{data_path}**/Validation/**/*.jpg"))
             )
         self.images = imgs
 

@@ -3,21 +3,25 @@ services:
     container_name: jupyter
     build:
       context: .
-    working_dir: /tmp
+    working_dir: /app
     tty: true
     volumes:
-      - /home/cslfiu/dev/cnn_vscf/NSF-REU-2024_VSCF/:/tmp
+      - ./src/GenerativeNetwork:/app/src
+      - ./generated:/app/generated
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+      - ./scd-videos:/app/external
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              count: all
               capabilities: [gpu]
     ports:
         - "$JUPYTER_PORT:$JUPYTER_PORT"
     env_file:
-     - ./.env
+     - .env
     entrypoint: jupyter lab --ip 0.0.0.0 --port=$JUPYTER_PORT --no-browser --allow-root
   tensorboard:
     container_name: tensorboard
@@ -26,16 +30,9 @@ services:
     working_dir: /logs
     tty: true
     volumes:
-      - /home/cslfiu/dev/cnn_vscf/NSF-REU-2024_VSCF/generated/tensors:/logs
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      - ./generated/tensors:/logs
     ports:
         - "$TENSORBOARD_PORT:$TENSORBOARD_PORT"
     env_file:
-     - ./.env
+     - .env
     entrypoint: tensorboard --logdir "." --host 0.0.0.0 --port $TENSORBOARD_PORT

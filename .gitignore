@@ -16,9 +16,6 @@ __pycache__
 # Ignore Trash files (usually created by file managers)
 .Trash-*
 
-# Ignore environment files
-.env
-
 # Ignore data directory (assuming it contains large files)
 data/
 

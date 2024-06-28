@@ -4,6 +4,7 @@ from tensorflow.keras.models import load_model  # type: ignore
 from glob import glob
 import random
 from matplotlib import pyplot as plt
+from pathlib import Path
 
 
 def apply_cfa(image: np.ndarray) -> np.ndarray:
@@ -38,7 +39,11 @@ def apply_cfa(image: np.ndarray) -> np.ndarray:
 
 
 def display_samples(
-    model_path, image_path: str = None, save_path: str = None, show: bool = True
+    data_path,
+    model_path,
+    image_path: str = None,
+    save_path: str = None,
+    show: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Display original and generated images side by side as a pyplot figure.
@@ -55,7 +60,7 @@ def display_samples(
 
     # Load the model
     if image_path is None:
-        image_paths = glob("data/frames/**/Validation/**/*.jpg")
+        image_paths = glob(f"{data_path}**/Validation/**/*.jpg")
         random.shuffle(image_paths)
         image_path = random.choice(image_paths)
         print(f"Using random image: {image_path}")
@@ -80,7 +85,7 @@ def display_samples(
     img = (img - 127.5) / 127.5
     img = np.expand_dims(img, axis=0)
 
-    label = _get_label(image_path)
+    label = _get_label(data_path, image_path)
     output = model.predict([img, label])
     output = (output * 127.5) + 127.5
     output = output[0]  # remove batch dimension
@@ -105,7 +110,7 @@ def display_samples(
     return orig, output
 
 
-def _get_label(image_path: str) -> np.ndarray:
+def _get_label(data_path, image_path: str) -> np.ndarray:
     """
     Get the label for an image based on its path.
 
@@ -115,7 +120,7 @@ def _get_label(image_path: str) -> np.ndarray:
     Returns:
         np.ndarray: An array representing the one-hot encoded label of the image.
     """
-    devices = sorted(np.array(glob("data/frames/*")))
+    devices = sorted(np.array(glob(f"{data_path}*")))
     label = np.zeros(len(devices), dtype=int)
     for i, device in enumerate(devices):
         if device in image_path:
