@@ -25,7 +25,7 @@ parser.add_argument("--use_cpu", type=bool, default=False, help="Use CPU for tra
 
 if __name__ == "__main__":
 
-    EPOCHS = 4
+    EPOCHS = 40
     BATCH_SIZE = 32
 
     # parse arguments
@@ -73,8 +73,8 @@ if __name__ == "__main__":
     tensorboard_callback = TensorBoard(log_dir=tensor_board_path)
 
     # create optimizers
-    generator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
-    discriminator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
+    generator_optimizer = optimizers.Adam(learning_rate=0.00001, beta_1=0.5, beta_2=0.9)
+    discriminator_optimizer = optimizers.Adam(learning_rate=0.00001, beta_1=0.5, beta_2=0.9)
 
     # compile and train
     wgangp = WGAN(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape)

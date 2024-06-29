@@ -39,8 +39,8 @@ def apply_cfa(image: np.ndarray) -> np.ndarray:
 
 
 def display_samples(
-    data_path,
     model_path,
+    data_path,
     image_path: str = None,
     save_path: str = None,
     show: bool = True,
@@ -50,6 +50,7 @@ def display_samples(
 
     Args:
         model_path (str or keras.Model): Path to the trained model or the model object itself.
+        data_path (str): Path to the dataset main folder.
         image_path (str, optional): Path to the input image. If not provided, a random image from the validation dataset will be used.
         save_path (str, optional): Path to save the generated plot. If not provided, the plot will not be saved.
         show (bool, optional): Whether to display the images using matplotlib. Defaults to True.
@@ -71,17 +72,15 @@ def display_samples(
 
     # Load and prepare the image
     img = cv2.imread(image_path)
-    height, width = img.shape[:2]
-    if height != 1920 and width != 1080 or height != 1080 and width != 1920:
-        raise ValueError("Image dimensions must be 1920x1080 or 1080x1920")
     orig = img.copy()
     flip = False
-    if height == 1920 and width == 1080:
-        img = np.transpose(img, (1, 0, 2))  # flip the image
-        flip = True  # set flip flag for later
+    if img.shape[0] == 1920 and img.shape[1] == 1080:
+        img = np.transpose(img, (1, 0, 2))
+        flip = True
+    height, width = img.shape[:2]
+    img = cv2.resize(img, (width//4, height//4))
 
     # preprocess the image
-    img = cv2.resize(img, (width // 4, height // 4))
     img = (img - 127.5) / 127.5
     img = np.expand_dims(img, axis=0)
 

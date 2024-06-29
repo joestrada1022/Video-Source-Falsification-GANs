@@ -151,6 +151,7 @@ class GANMonitor(Callback):
     def __init__(self, data_path, save_path, num_img=3):
         self.num_img = num_img
         self.save_path = save_path
+        self.data_path = data_path
         imgs = []
         for i in range(self.num_img):
             imgs.append(
@@ -168,7 +169,8 @@ class GANMonitor(Callback):
         """
         for i in range(self.num_img):
             img = display_samples(
-                self.model.generator,
+                model_path=self.model.generator,
+                data_path=self.data_path,
                 save_path=f"{self.save_path}/epoch_{epoch}_img{i}.png",
                 image_path=self.images[i],
                 show=False,
