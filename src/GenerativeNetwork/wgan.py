@@ -3,7 +3,6 @@ from tensorflow.keras.models import Model  # type: ignore
 from tensorflow.keras.callbacks import Callback  # type: ignore
 from tensorflow.keras import metrics  # type: ignore
 from utils import display_samples
-from pathlib import Path
 from glob import glob
 import random
 
@@ -61,12 +60,45 @@ class WGAN(Model):
         gp = tf.reduce_mean((norm - 1.0) ** 2)
         return gp
 
-    def classifier_loss(
-        self, generated_images, target_labels
-    ):
-        generated_images = tf.image.resize(generated_images, (480, 800))
+    # def preprocess_classifier(self, image):
+    #     image = tf.image.resize(image, (270*4, 480*4))
+    #     image = tf.py_function(self._center_crop, [image], tf.float32)
+
+    #     return image
+
+    # # @tf.function
+    # def _center_crop(self, img):
+    #     img = tf.convert_to_tensor(img.numpy())
+    #     img_height, img_width, _ = img.get_shape().as_list()
+
+    #     # Correcting image orientation
+    #     if img_height > img_width:
+    #         img = tf.image.rot90(img)
+    #         img_height, img_width = img_width, img_height
+
+    #     # Perform center crop
+    #     crop_height, crop_width = 480, 800
+    #     img = tf.image.crop_to_bounding_box(image=img,
+    #                                         offset_height=int(img_height / 2 - crop_height / 2),
+    #                                         offset_width=int(img_width / 2 - crop_width / 2),
+    #                                         target_height=crop_height,
+    #                                         target_width=crop_width)
+    #     return img
+
+    def classifier_loss(self, generated_images, target_labels):
+        # generated_images = tf.map_fn(lambda img: self.preprocess_classifier(img), generated_images)
+        generated_images = tf.image.resize(generated_images, (270 * 4, 480 * 4))
+        img_height, img_width = 270 * 4, 480 * 4
+        crop_height, crop_width = 480, 800
+        generated_images = tf.image.crop_to_bounding_box(
+            image=generated_images,
+            offset_height=int(img_height / 2 - crop_height / 2),
+            offset_width=int(img_width / 2 - crop_width / 2),
+            target_height=crop_height,
+            target_width=crop_width,
+        )
         cls_predictions = self.classifier(generated_images, training=False)
-        cls_loss = tf.reduce_mean(
+        cls_loss = -tf.reduce_mean(
             tf.keras.losses.categorical_crossentropy(
                 target_labels, cls_predictions["output_0"]
             )
@@ -82,16 +114,12 @@ class WGAN(Model):
             raise ValueError("Expected data format: (images, labels)")
         # get batch size
         batch_size = tf.shape(real_images)[0]
-        # generate random labels that are not equal to the real labels
-        target_labels = tf.roll(real_labels, shift=1, axis=1)
 
         # train discriminator
         for i in range(self.d_steps):
             with tf.GradientTape() as tape:
                 # generate fake images
-                fake_images = self.generator(
-                    [real_images, target_labels], training=True
-                )
+                fake_images = self.generator([real_images, real_labels], training=True)
                 # get discriminator output for real and fake images
                 fake_predictions = self.discriminator(fake_images, training=True)
                 real_Predictions = self.discriminator(real_images, training=True)
@@ -111,16 +139,14 @@ class WGAN(Model):
         # train generator
         with tf.GradientTape() as tape:
             # calculate adversarial loss
-            generated_images = self.generator(
-                [real_images, target_labels], training=True
-            )
+            generated_images = self.generator([real_images, real_labels], training=True)
             gen_predictions = self.discriminator(generated_images, training=True)
 
             g_loss = -tf.reduce_mean(gen_predictions)
 
             # calculate classification loss
             # with tf.device("/cpu:0"):
-            cls_loss = self.classifier_loss(generated_images, target_labels)
+            cls_loss = self.classifier_loss(generated_images, real_labels)
             # add other losses to the generator loss
             g_loss += cls_loss * self.cls_weight
 
@@ -148,18 +174,16 @@ class GANMonitor(Callback):
         num_img (int, optional): The number of images to generate and save. Defaults to 3.
     """
 
-    def __init__(self, data_path, save_path, num_img=3):
+    def __init__(self, data_path: str, save_path: str, num_img:int =3):
         self.num_img = num_img
         self.save_path = save_path
         self.data_path = data_path
         imgs = []
         for i in range(self.num_img):
-            imgs.append(
-                random.choice(glob(f"{data_path}**/Validation/**/*.jpg"))
-            )
+            imgs.append(random.choice(glob(f"{data_path}**/Validation/**/*.jpg")))
         self.images = imgs
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch: int, logs=None):
         """
         Callback function called at the end of each epoch.
 
@@ -198,7 +222,7 @@ class ModelSaveCallback(Callback):
         model.fit(x_train, y_train, callbacks=[callback])
     """
 
-    def __init__(self, generator, discriminator, save_path):
+    def __init__(self, generator: Model, discriminator: Model, save_path: str):
         super().__init__()
         self.generator = generator
         self.discriminator = discriminator
