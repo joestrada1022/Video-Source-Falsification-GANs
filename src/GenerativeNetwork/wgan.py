@@ -4,6 +4,7 @@ from tensorflow.keras.callbacks import Callback  # type: ignore
 from tensorflow.keras import metrics  # type: ignore
 from utils import display_samples
 from glob import glob
+import os
 import random
 
 
@@ -16,7 +17,7 @@ class WGAN(Model):
         input_shape,
         discriminator_extra_steps=3,
         gp_weight=10.0,
-        cls_weight=1.0,  # TODO: adjust value
+        cls_weight=0.25,  # TODO: adjust value
     ):
         super().__init__()
         self.discriminator = discriminator
@@ -38,10 +39,11 @@ class WGAN(Model):
         self.g_loss = metrics.Mean(name="g_loss")
         self.d_loss = metrics.Mean(name="d_loss")
         self.cls_loss = metrics.Mean(name="cls_loss")
+        self.adv_loss = metrics.Mean(name="adv_loss")
 
     @property
     def metrics(self):
-        return [self.d_loss, self.d_wass_loss, self.d_gp, self.g_loss, self.cls_loss]
+        return [self.d_loss, self.d_wass_loss, self.d_gp, self.g_loss, self.cls_loss, self.adv_loss]
 
     def gradient_penalty(self, batch_size, real_images, fake_images):
         alpha = tf.random.uniform([batch_size, 1, 1, 1], 0.0, 1.0)
@@ -86,7 +88,16 @@ class WGAN(Model):
     #     return img
 
     def classifier_loss(self, generated_images, target_labels):
-        # generated_images = tf.map_fn(lambda img: self.preprocess_classifier(img), generated_images)
+        cls_predictions = self.classifier(generated_images, training=False)
+        cls_loss = -tf.reduce_mean(
+            tf.keras.losses.categorical_crossentropy(
+                target_labels, cls_predictions["output_0"]
+            )
+        )
+
+        return cls_loss
+    
+    def classifier_prepare(self, generated_images):
         generated_images = tf.image.resize(generated_images, (270 * 4, 480 * 4))
         img_height, img_width = 270 * 4, 480 * 4
         crop_height, crop_width = 480, 800
@@ -97,14 +108,9 @@ class WGAN(Model):
             target_height=crop_height,
             target_width=crop_width,
         )
-        cls_predictions = self.classifier(generated_images, training=False)
-        cls_loss = -tf.reduce_mean(
-            tf.keras.losses.categorical_crossentropy(
-                target_labels, cls_predictions["output_0"]
-            )
-        )
 
-        return cls_loss
+        return generated_images
+
 
     # @tf.function # if training slow, turn this one
     def train_step(self, data):
@@ -142,13 +148,15 @@ class WGAN(Model):
             generated_images = self.generator([real_images, real_labels], training=True)
             gen_predictions = self.discriminator(generated_images, training=True)
 
-            g_loss = -tf.reduce_mean(gen_predictions)
+            adv_loss = -tf.reduce_mean(gen_predictions)
+
+            # prepare images for classifier
+            preprocessed_images = self.classifier_prepare(generated_images)
 
             # calculate classification loss
-            # with tf.device("/cpu:0"):
-            cls_loss = self.classifier_loss(generated_images, real_labels)
+            cls_loss = self.classifier_loss(preprocessed_images, real_labels)
             # add other losses to the generator loss
-            g_loss += cls_loss * self.cls_weight
+            g_loss = (cls_loss * self.cls_weight) + adv_loss
 
         g_gradients = tape.gradient(g_loss, self.generator.trainable_variables)
         self.g_optimizer.apply_gradients(
@@ -160,6 +168,7 @@ class WGAN(Model):
         self.d_gp.update_state(d_gp)
         self.g_loss.update_state(g_loss)
         self.cls_loss.update_state(cls_loss)
+        self.adv_loss.update_state(adv_loss)
 
         return {m.name: m.result() for m in self.metrics}
 
@@ -168,20 +177,32 @@ class GANMonitor(Callback):
     """
     Callback for monitoring and saving generated images during training.
     Shows the progression of the same generated image after each epoch.
-
-    Args:
-        save_path (str): The directory path where the generated images will be saved.
-        num_img (int, optional): The number of images to generate and save. Defaults to 3.
     """
 
-    def __init__(self, data_path: str, save_path: str, num_img:int =3):
-        self.num_img = num_img
+    def __init__(self, data_path: str, save_path: str, num_img:int =None):
+        device_paths = list(glob(f"{data_path}*"))
+        if len(device_paths) == 0:
+            raise ValueError(f"No devices found in {data_path}")
+        
+        self.num_img = num_img if num_img else len(device_paths)
         self.save_path = save_path
         self.data_path = data_path
         imgs = []
+
         for i in range(self.num_img):
-            imgs.append(random.choice(glob(f"{data_path}**/Validation/**/*.jpg")))
+            if i < len(device_paths):
+                device_path = device_paths[i]
+                image_paths = list(glob(f"{device_path}/Validation/**/*.jpg"))
+
+            else:
+                image_paths = list(glob(f"{self.data_path}**/Validation/**/*.jpg"))
+
+            img = random.choice(image_paths)
+            imgs.append(img)
         self.images = imgs
+        print(f"Using images: {[os.path.basename(img) for img in self.images]}")
+
+
 
     def on_epoch_end(self, epoch: int, logs=None):
         """
@@ -192,7 +213,7 @@ class GANMonitor(Callback):
             logs (dict, optional): Dictionary containing the training metrics for the current epoch. Defaults to None.
         """
         for i in range(self.num_img):
-            img = display_samples(
+            display_samples(
                 model_path=self.model.generator,
                 data_path=self.data_path,
                 save_path=f"{self.save_path}/epoch_{epoch}_img{i}.png",

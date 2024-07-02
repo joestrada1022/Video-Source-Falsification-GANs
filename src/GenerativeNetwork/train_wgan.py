@@ -1,9 +1,7 @@
 import tensorflow as tf
-import numpy as np
-from tensorflow.keras.constraints import Constraint # type: ignore
+import keras
 from tensorflow.keras import optimizers # type: ignore
 from tensorflow.keras.callbacks import TensorBoard # type: ignore
-from tensorflow.keras.models import load_model # type: ignore
 
 import argparse
 import os
@@ -13,7 +11,6 @@ from discriminator import Discriminator
 from datagenGAN import DataSetGeneratorGAN
 from datagenGAN import DataGeneratorGAN
 from wgan import WGAN, GANMonitor, ModelSaveCallback
-import keras
 
 parser = argparse.ArgumentParser(description="Train a WGAN model")
 parser.add_argument("--data_path", type=str, required=True, help="Path to the data folder")
@@ -25,7 +22,7 @@ parser.add_argument("--use_cpu", type=bool, default=False, help="Use CPU for tra
 
 if __name__ == "__main__":
 
-    EPOCHS = 40
+    EPOCHS = 30
     BATCH_SIZE = 32
 
     # parse arguments
@@ -64,7 +61,7 @@ if __name__ == "__main__":
     disc.print_model_summary()
 
     # load pre-trained classifier
-    print('File Exists: ', os.path.exists(classifier_path))
+    print('Classifier Exists: ', os.path.exists(classifier_path))
     classifier = keras.layers.TFSMLayer(classifier_path, call_endpoint='serving_default')
 
     # create callbacks
@@ -73,8 +70,8 @@ if __name__ == "__main__":
     tensorboard_callback = TensorBoard(log_dir=tensor_board_path)
 
     # create optimizers
-    generator_optimizer = optimizers.Adam(learning_rate=0.00001, beta_1=0.5, beta_2=0.9)
-    discriminator_optimizer = optimizers.Adam(learning_rate=0.00001, beta_1=0.5, beta_2=0.9)
+    generator_optimizer = optimizers.Adam(learning_rate=0.0002, beta_1=0.5, beta_2=0.9)
+    discriminator_optimizer = optimizers.Adam(learning_rate=0.0002, beta_1=0.5, beta_2=0.9)
 
     # compile and train
     wgangp = WGAN(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape)

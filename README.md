@@ -1,3 +1,53 @@
+# Source Camera Device Falsification from Videos
+
+This repository contains the source code for Video Source Device Falsification. The QUFVD dataset is required to run the experiment without any changes in the code. 
+
+## Dataset Preparation
+
+### Preparation of the QUFVD dataset
+
+#### Dataset Download
+
+Download videos from [QUFVD](https://ieeexplore.ieee.org/document/9713852/), under DatasetVideosForEvaluation. For these experiments, we only use three devices and downloaded from the 'Device2' folders for consistency. 
+
+We assume the QUFVD dataset is downloaded and available in the original structure:
+
+```
+data/videos/
+├── Galaxi-A50
+│   ├── Testing
+│   ├── Training
+│   └── Validation
+├── IPhone
+│   ├── Testing
+│   ├── Training
+│   └── Validation
+└── Nokia
+    ├── Testing
+    ├── Training
+    └── Validation
+```
+
+#### Frame Extraction
+
+For the extraction of frames FFMPEG is used. Beofre running, install FFMPEG, and change "ffmpeg_path" variable inside "dataset/frames_extraction/iframe.py" file to the absolute path of ffmpeg
+
+1. To extract the I-frames from each video and save it locally run dataset/frames_extraction/extract_video_frames.py
+
+```python
+python3 dataset/frames_extraction/extract_video_frames.py --vision_dataset_path="absolute/path/to/VISION/dataset" --frames_output_path="absolute/path/to/save/extracted/i-frames"
+```
+
+```
+data/frames/IPhone/Testing/
+├── iPhone-xsMax-2(100)
+│   ├── iPhone-xsMax-2(100).MOV_001.jpg
+│   ├── iPhone-xsMax-2(100).MOV_002.jpg
+├── ...
+├── iPhone-xsMax-2(111)
+
+```
+
 # Ensemble CNN Video Source Identification
 
 This repository contains the source code for ensemble learning CNN video Source Identification. VISION dataset is required to run the experiment without any changes in code. 
