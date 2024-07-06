@@ -44,22 +44,22 @@ class Generator:
         x = layers.Concatenate(axis=-1)([gen_input, label_expanded])
 
         # Two Downsample Blocks
-        x = layers.Conv2D(32, (3, 3), strides=3, use_bias=False)(x)
+        x = layers.Conv2D(64, (3, 3), strides=3, use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.LeakyReLU()(x)
 
-        x = layers.Conv2D(64, (2, 2), strides=2, use_bias=False)(x)
+        x = layers.Conv2D(128, (2, 2), strides=2, use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.LeakyReLU()(x)
 
         # Two Upsample Blocks
         x = layers.UpSampling2D()(x)
-        x = layers.Conv2D(64, (2, 2), strides=1, padding="same")(x)
+        x = layers.Conv2D(128, (2, 2), strides=1, padding="same")(x)
         x= layers.BatchNormalization()(x)
         x= layers.LeakyReLU()(x)
 
         x = layers.UpSampling2D(size=(3,3))(x)
-        x = layers.Conv2D(32, (2, 2), strides=1, padding="same")(x)
+        x = layers.Conv2D(64, (2, 2), strides=1, padding="same")(x)
         x = layers.BatchNormalization()(x)
         x = layers.LeakyReLU()(x)
 

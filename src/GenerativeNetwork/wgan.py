@@ -17,7 +17,7 @@ class WGAN(Model):
         input_shape,
         discriminator_extra_steps=3,
         gp_weight=10.0,
-        cls_weight=0.25,  # TODO: adjust value
+        cls_weight=.01,  # TODO: adjust value
     ):
         super().__init__()
         self.discriminator = discriminator
@@ -61,31 +61,6 @@ class WGAN(Model):
         norm = tf.sqrt(tf.reduce_sum(tf.square(grads), axis=[1, 2, 3]))
         gp = tf.reduce_mean((norm - 1.0) ** 2)
         return gp
-
-    # def preprocess_classifier(self, image):
-    #     image = tf.image.resize(image, (270*4, 480*4))
-    #     image = tf.py_function(self._center_crop, [image], tf.float32)
-
-    #     return image
-
-    # # @tf.function
-    # def _center_crop(self, img):
-    #     img = tf.convert_to_tensor(img.numpy())
-    #     img_height, img_width, _ = img.get_shape().as_list()
-
-    #     # Correcting image orientation
-    #     if img_height > img_width:
-    #         img = tf.image.rot90(img)
-    #         img_height, img_width = img_width, img_height
-
-    #     # Perform center crop
-    #     crop_height, crop_width = 480, 800
-    #     img = tf.image.crop_to_bounding_box(image=img,
-    #                                         offset_height=int(img_height / 2 - crop_height / 2),
-    #                                         offset_width=int(img_width / 2 - crop_width / 2),
-    #                                         target_height=crop_height,
-    #                                         target_width=crop_width)
-    #     return img
 
     def classifier_loss(self, generated_images, target_labels):
         cls_predictions = self.classifier(generated_images, training=False)
@@ -180,7 +155,7 @@ class GANMonitor(Callback):
     """
 
     def __init__(self, data_path: str, save_path: str, num_img:int =None):
-        device_paths = list(glob(f"{data_path}*"))
+        device_paths = sorted(list(glob(f"{data_path}*")))
         if len(device_paths) == 0:
             raise ValueError(f"No devices found in {data_path}")
         
