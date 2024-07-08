@@ -11,7 +11,8 @@ from glob import glob
 from utils import apply_cfa
 
 class DataGeneratorGAN(Sequence):
-    def __init__(self,frames_path_dict, num_classes, batch_size=32, to_fit=True, shuffle=True):
+    def __init__(self,frames_path_dict, num_classes, batch_size=32, to_fit=True, shuffle=True, **kwargs):
+        super().__init__(**kwargs)
         self.frames_path_dict = frames_path_dict
         self.to_fit = to_fit
         self.num_classes = num_classes
@@ -51,7 +52,7 @@ class DataGeneratorGAN(Sequence):
             np.random.shuffle(self.indexes)
 
     def __generate_frames_ds__(self, list_IDs_temp):
-        frame_ds = np.empty((self.batch_size, 1080//2, 1920//2, 3), dtype=np.float32)
+        frame_ds = np.empty((self.batch_size, 1080//4, 1920//4, 3), dtype=np.float32)
         labels_ds = np.empty((self.batch_size, self.num_classes), dtype=np.float32)
         for i, id in enumerate(list_IDs_temp):
             key = "item_ID"
@@ -71,7 +72,7 @@ class DataGeneratorGAN(Sequence):
         if img.shape[0] == 1920 and img.shape[1] == 1080:
             img = np.transpose(img, (1, 0, 2))
         height, width = img.shape[:2]
-        img = cv2.resize(img, (width//2, height//2))
+        img = cv2.resize(img, (width//4, height//4))
         
         # img = apply_cfa(img)
         # Normalize the pixel values
