@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     # load pre-trained classifier
     print('Classifier Exists: ', os.path.exists(classifier_path))
-    classifier = keras.layers.TFSMLayer(classifier_path, call_endpoint='serving_default')
+    classifier = keras.models.load_model(classifier_path)
 
     # create callbacks
     image_callback = GANMonitor(data_path=dataset_path, save_path=image_path)

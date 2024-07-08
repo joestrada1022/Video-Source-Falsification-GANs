@@ -17,18 +17,24 @@ class WGAN(Model):
         input_shape,
         discriminator_extra_steps=3,
         gp_weight=10.0,
-        cls_weight=.01,  # TODO: adjust value
+        cls_weight=1.0,  # TODO: adjust value
     ):
         super().__init__()
         self.discriminator = discriminator
         self.generator = generator
         self.classifier = classifier
 
-        self.input_shape = input_shape
+        self.model_input_shape = input_shape
         self.d_steps = discriminator_extra_steps
 
         self.gp_weight = gp_weight
         self.cls_weight = cls_weight
+
+        # initialize current epoch
+        self.current_epoch = 0
+
+    def update_epoch(self):
+        self.current_epoch += 1
 
     def compile(self, d_optimizer, g_optimizer):
         super().compile()
@@ -66,7 +72,7 @@ class WGAN(Model):
         cls_predictions = self.classifier(generated_images, training=False)
         cls_loss = -tf.reduce_mean(
             tf.keras.losses.categorical_crossentropy(
-                target_labels, cls_predictions["output_0"]
+                target_labels, cls_predictions
             )
         )
 
