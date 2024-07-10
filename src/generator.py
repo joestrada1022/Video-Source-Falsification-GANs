@@ -1,8 +1,8 @@
 import tensorflow as tf
 
-from tensorflow.keras.callbacks import TensorBoard # type: ignore
-from tensorflow.keras import layers  # type: ignore
-from tensorflow.keras.models import Model  # type: ignore
+from keras.callbacks import TensorBoard # type: ignore
+from keras import layers  # type: ignore
+from keras.models import Model  # type: ignore
 
 class Generator:
     def __init__(self, input_shape: tuple, num_classes: int):
@@ -36,15 +36,10 @@ class Generator:
         shape = (self.input_width, self.input_height, self.input_channels)
         gen_input = layers.Input(shape=shape)
 
-        label_input = layers.Input(shape=(self.num_classes,))
-
-        label_expanded = layers.RepeatVector(self.input_width * self.input_height)(label_input)
-        label_expanded = layers.Reshape((self.input_width, self.input_height, 3))(label_expanded)
-    
-        x = layers.Concatenate(axis=-1)([gen_input, label_expanded])
+        x = gen_input
 
         # Two Downsample Blocks
-        x = layers.Conv2D(64, (3, 3), strides=3, use_bias=False)(x)
+        x = layers.Conv2D(64, (2, 2), strides=2, use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.LeakyReLU()(x)
 
@@ -58,7 +53,7 @@ class Generator:
         x= layers.BatchNormalization()(x)
         x= layers.LeakyReLU()(x)
 
-        x = layers.UpSampling2D(size=(3,3))(x)
+        x = layers.UpSampling2D()(x)
         x = layers.Conv2D(64, (2, 2), strides=1, padding="same")(x)
         x = layers.BatchNormalization()(x)
         x = layers.LeakyReLU()(x)
@@ -74,7 +69,7 @@ class Generator:
 
         generator_output = x
 
-        model = Model([gen_input, label_input], generator_output)
+        model = Model(gen_input, generator_output)
 
         self.model_name = self.__generate_model_name()
         self.model = model

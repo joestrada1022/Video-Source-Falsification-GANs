@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from tensorflow.keras.models import load_model  # type: ignore
+from keras.models import load_model  # type: ignore
 from glob import glob
 import random
 from matplotlib import pyplot as plt
@@ -37,7 +37,6 @@ def apply_cfa(image: np.ndarray) -> np.ndarray:
 
     return cfa_image
 
-
 def display_samples(
     model_path,
     data_path,
@@ -50,7 +49,7 @@ def display_samples(
 
     Args:
         model_path (str or keras.Model): Path to the trained model or the model object itself.
-        data_path (str): Path to the dataset main folder.
+        data_path (str): Path to the dataset main folder for grabbing a random image.
         image_path (str, optional): Path to the input image. If not provided, a random image from the validation dataset will be used.
         save_path (str, optional): Path to save the generated plot. If not provided, the plot will not be saved.
         show (bool, optional): Whether to display the images using matplotlib. Defaults to True.
@@ -78,7 +77,7 @@ def display_samples(
         img = np.transpose(img, (1, 0, 2))
         flip = True
     height, width = img.shape[:2]
-    img = cv2.resize(img, (width//4, height//4))
+    img = cv2.resize(img, (width//3, height//3))
 
     # preprocess the image
     img = (img - 127.5) / 127.5
@@ -106,6 +105,7 @@ def display_samples(
         plt.savefig(save_path)
     if show:
         plt.show()
+    fig.clear()
     return orig, output
 
 

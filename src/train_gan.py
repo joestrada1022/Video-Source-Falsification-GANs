@@ -2,9 +2,9 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 
-from tensorflow.keras.callbacks import TensorBoard, Callback  # type: ignore
-from tensorflow.keras import layers, optimizers, metrics, utils  # type: ignore
-from tensorflow.keras.models import Model  # type: ignore
+from keras.callbacks import TensorBoard, Callback  # type: ignore
+from keras import layers, optimizers, metrics, utils  # type: ignore
+from keras.models import Model  # type: ignore
 
 from generator import Generator
 from discriminator import Discriminator

@@ -21,7 +21,7 @@ def _center_crop(self, img):
                                             target_width=crop_width)
         return img
 
-classifier_path = 'scd-videos/results/12_frames/mobile_net/models/MobileNet_12/fm-e00020.keras'
+classifier_path = '/home/cslfiu/dev/cnn_vscf/NSF-REU-2024_VSCF/scd_videos/results/12_frames_pred/mobile_net/models/MobileNet_12/fm-e00020.keras'
 
 classifier = keras.models.load_model(classifier_path)
 
@@ -32,7 +32,7 @@ train = dataset_maker.create_dataset('Training')
 print(f"Train dataset contains {len(train)} samples")
 num_classes = len(dataset_maker.get_class_names())
 
-shape = (1080 // 4, 1920 // 4, 3)
+shape = (1080 // 3, 1920 // 3, 3)
 
 datagen = DataGeneratorGAN(train, num_classes=num_classes, batch_size=32)
 
@@ -40,12 +40,12 @@ datagen = DataGeneratorGAN(train, num_classes=num_classes, batch_size=32)
 for i, (frames_batch, labels_batch) in enumerate(datagen):
     img_height, img_width = frames_batch.shape[1:3]
     print(img_height, img_width, sep='\t')
-    generated_images = tf.image.resize(frames_batch, (270 * 4, 480 * 4))
-    img_height, img_width = 270 * 4, 480 * 4
+    img_height, img_width = 360, 640
+    generated_images = frames_batch
     if img_height > img_width:
         generated_images = tf.image.rot90(generated_images)
         img_height, img_width = img_width, img_height
-    crop_height, crop_width = 480, 800
+    crop_height, crop_width = 360, 640
     generated_images = tf.image.crop_to_bounding_box(
         image=generated_images,
         offset_height=int(img_height / 2 - crop_height / 2),
@@ -53,7 +53,7 @@ for i, (frames_batch, labels_batch) in enumerate(datagen):
         target_height=crop_height,
         target_width=crop_width,
     )
-    # generated_images = generated_images / 127.5 - 127.5
+    # generated_images = generated_images / 255
     cls_predictions = classifier(generated_images, training=False)
     # print true label and predicted label
     print(f"True labels: {labels_batch.argmax(axis=1)}")

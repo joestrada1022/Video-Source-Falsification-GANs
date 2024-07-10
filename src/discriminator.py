@@ -1,6 +1,6 @@
-from tensorflow.keras.callbacks import TensorBoard  # type: ignore
-from tensorflow.keras import layers  # type: ignore
-from tensorflow.keras.models import Model  # type: ignore
+from keras.callbacks import TensorBoard  # type: ignore
+from keras import layers  # type: ignore
+from keras.models import Model  # type: ignore
 
 
 class Discriminator:
