@@ -6,11 +6,10 @@ services:
     working_dir: /app
     tty: true
     volumes:
-      - ./src/GenerativeNetwork:/app/src
+      - ./src:/app/src
       - ./generated:/app/generated
-      - ./notebooks:/app/notebooks
       - ./data:/app/data
-      - ./scd-videos:/app/external
+      - ./scd_videos:/app/src/scd_videos
     deploy:
       resources:
         reservations:
@@ -20,6 +19,8 @@ services:
               capabilities: [gpu]
     ports:
         - "$JUPYTER_PORT:$JUPYTER_PORT"
+    environment:
+      - PYTHONPATH=/app/src:/app/src/scd_videos
     env_file:
      - .env
     entrypoint: jupyter lab --ip 0.0.0.0 --port=$JUPYTER_PORT --no-browser --allow-root
