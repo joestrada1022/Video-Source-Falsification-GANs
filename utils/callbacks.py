@@ -2,7 +2,7 @@ from glob import glob
 from keras.callbacks import Callback
 import os, random
 from keras.models import Model
-from helpers import display_samples
+from utils.helpers import display_samples
 
 
 class GANMonitor(Callback):

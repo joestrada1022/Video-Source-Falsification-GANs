@@ -6,12 +6,12 @@ from keras.callbacks import TensorBoard # type: ignore
 import argparse
 import os
 
-from generator import Generator
-from discriminator import Discriminator
-from datagenGAN import DataSetGeneratorGAN
-from datagenGAN import DataGeneratorGAN
-from wgan import WGAN
-from callbacks import GANMonitor, ModelSaveCallback
+from models.generator import Generator
+from models.discriminator import Discriminator
+from utils.datagenGAN import DataSetGeneratorGAN
+from utils.datagenGAN import DataGeneratorGAN
+from models.wgan import WGAN
+from utils.callbacks import GANMonitor, ModelSaveCallback
 
 parser = argparse.ArgumentParser(description="Train a WGAN model")
 parser.add_argument("--data_path", type=str, required=True, help="Path to the data folder")

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import keras
-from datagenGAN import DataSetGeneratorGAN, DataGeneratorGAN
+from utils.datagenGAN import DataSetGeneratorGAN, DataGeneratorGAN
 
 def _center_crop(self, img):
         img = tf.convert_to_tensor(img.numpy())

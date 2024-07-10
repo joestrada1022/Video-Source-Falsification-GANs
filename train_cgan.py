@@ -6,12 +6,10 @@ from keras.callbacks import TensorBoard
 from pathlib import Path
 import argparse, os
 
-from generator import Generator
-from discriminator import Discriminator
-from cgan import CGAN
-from datagenGAN import DataSetGeneratorGAN
-from datagenGAN import DataGeneratorGAN
-from callbacks import GANMonitor, ModelSaveCallback
+from models.cgan import CGAN
+from utils.datagenGAN import DataSetGeneratorGAN
+from utils.datagenGAN import DataGeneratorGAN
+from utils.callbacks import GANMonitor, ModelSaveCallback
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scd_videos.models import MobileNet

@@ -1,4 +1,4 @@
-from helpers import display_samples
+from utils.helpers import display_samples
 import datetime, cv2
 from keras.models import load_model
 import numpy as np
