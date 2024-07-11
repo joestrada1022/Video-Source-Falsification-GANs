@@ -77,7 +77,7 @@ class CGAN(Model):
 
         return new_generator
 
-    # @tf.function  # if training slow, turn this one
+    @tf.function  # if training slow, turn this one
     def train_step(self, data):
         if isinstance(data, tuple) and len(data) == 2:
             real_images, real_labels = data

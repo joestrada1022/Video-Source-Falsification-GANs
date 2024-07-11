@@ -1,6 +1,9 @@
 import tensorflow as tf
 import numpy as np
 import keras
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.datagenGAN import DataSetGeneratorGAN, DataGeneratorGAN
 
 def _center_crop(self, img):
@@ -21,7 +24,7 @@ def _center_crop(self, img):
                                             target_width=crop_width)
         return img
 
-classifier_path = '/home/cslfiu/dev/cnn_vscf/NSF-REU-2024_VSCF/scd_videos/results/12_frames_pred/mobile_net/models/MobileNet_12/fm-e00020.keras'
+classifier_path = 'generated/models/cgan/discriminator_epoch_13.keras'
 
 classifier = keras.models.load_model(classifier_path)
 
@@ -34,7 +37,7 @@ num_classes = len(dataset_maker.get_class_names())
 
 shape = (1080 // 3, 1920 // 3, 3)
 
-datagen = DataGeneratorGAN(train, num_classes=num_classes, batch_size=32)
+datagen = DataGeneratorGAN(train, num_classes=num_classes, batch_size=24)
 
 # Iterate over the data generator
 for i, (frames_batch, labels_batch) in enumerate(datagen):
@@ -58,5 +61,7 @@ for i, (frames_batch, labels_batch) in enumerate(datagen):
     # print true label and predicted label
     print(f"True labels: {labels_batch.argmax(axis=1)}")
     print(f"Pred labels: {cls_predictions.numpy().argmax(axis=1)}")
+    accuracy = np.mean(labels_batch.argmax(axis=1) == cls_predictions.numpy().argmax(axis=1))
+    print(f"Accuracy: {accuracy}")
     if i >= 2: 
         break

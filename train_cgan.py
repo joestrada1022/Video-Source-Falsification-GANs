@@ -10,8 +10,6 @@ from models.cgan import CGAN
 from utils.datagenGAN import DataSetGeneratorGAN
 from utils.datagenGAN import DataGeneratorGAN
 from utils.callbacks import GANMonitor, ModelSaveCallback
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scd_videos.models import MobileNet
 
 parser = argparse.ArgumentParser(description="Train a WGAN model")
