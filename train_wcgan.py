@@ -13,11 +13,9 @@ from models import Generator, Discriminator, WCGAN
 
 parser = argparse.ArgumentParser(description="Train a WGAN model")
 parser.add_argument("--data_path", type=str, required=True, help="Path to the data folder")
-parser.add_argument("--image_path", type=str, required=True, help="Path to the image callback output folder")
-parser.add_argument("--model_path", type=str, required=True, help="Path to the model output folder")
-parser.add_argument("--tensorboard_path", type=str, required=True, help="Path to the tensorboard output")
 parser.add_argument("--classifier_path", type=str, required=True, help="Path to the external classifier")
 parser.add_argument("--use_cpu", type=bool, default=False, help="Use CPU for training")
+parser.add_argument("--output_path", type=str, required=True, help="Path to the output folder")
 
 if __name__ == "__main__":
 
@@ -27,9 +25,9 @@ if __name__ == "__main__":
     # parse arguments
     args = parser.parse_args()
     dataset_path = args.data_path
-    model_path = args.model_path
-    tensor_board_path = args.tensorboard_path
-    image_path = args.image_path
+    image_path = args.output_path + "/images"
+    model_path = args.output_path + "/models"
+    tensor_board_path = args.output_path + "/logs"
     classifier_path = args.classifier_path
     use_cpu = args.use_cpu
 

@@ -3,6 +3,7 @@ from keras.callbacks import Callback
 import os, random
 from keras.models import Model
 from utils.helpers import display_samples
+import os
 
 
 class GANMonitor(Callback):
@@ -17,6 +18,8 @@ class GANMonitor(Callback):
             raise ValueError(f"No devices found in {data_path}")
         
         self.num_img = num_img if num_img else len(device_paths)
+        # Create save path if it doesn't exist
+        os.makedirs(save_path, exist_ok=True)
         self.save_path = save_path
         self.data_path = data_path
         imgs = []
@@ -33,7 +36,6 @@ class GANMonitor(Callback):
             imgs.append(img)
         self.images = imgs
         print(f"Using images: {[os.path.basename(img) for img in self.images]}")
-
 
 
     def on_epoch_end(self, epoch: int, logs=None):
@@ -78,6 +80,8 @@ class ModelSaveCallback(Callback):
         super().__init__()
         self.generator = generator
         self.discriminator = discriminator
+        # Create save path if it doesn't exist
+        os.makedirs(save_path, exist_ok=True)
         self.save_path = save_path
 
     def on_epoch_end(self, epoch, logs=None):
