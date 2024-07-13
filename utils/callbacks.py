@@ -91,5 +91,7 @@ class ModelSaveCallback(Callback):
         Returns:
             None
         """
-        self.generator.save(f"{self.save_path}/generator_epoch_{epoch}.keras")
-        self.discriminator.save(f"{self.save_path}/discriminator_epoch_{epoch}.keras")
+        if self.generator is not None:
+            self.generator.save(f"{self.save_path}/generator_epoch_{epoch}.keras")
+        if self.discriminator is not None:
+            self.discriminator.save(f"{self.save_path}/discriminator_epoch_{epoch}.keras")

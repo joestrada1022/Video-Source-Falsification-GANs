@@ -1,23 +1,22 @@
 import tensorflow as tf
 import keras
-from keras import optimizers # type: ignore
-from keras.callbacks import TensorBoard # type: ignore
+from keras import optimizers
+from keras.callbacks import TensorBoard
 
-import argparse
-import os
+from pathlib import Path
+import argparse, os
 
-from models.generator import Generator
-from models.discriminator import Discriminator
 from utils.datagenGAN import DataSetGeneratorGAN
 from utils.datagenGAN import DataGeneratorGAN
-from models.wgan import WGAN
 from utils.callbacks import GANMonitor, ModelSaveCallback
+from models import Generator, Discriminator, WCGAN
 
 parser = argparse.ArgumentParser(description="Train a WGAN model")
 parser.add_argument("--data_path", type=str, required=True, help="Path to the data folder")
 parser.add_argument("--image_path", type=str, required=True, help="Path to the image callback output folder")
 parser.add_argument("--model_path", type=str, required=True, help="Path to the model output folder")
 parser.add_argument("--tensorboard_path", type=str, required=True, help="Path to the tensorboard output")
+parser.add_argument("--classifier_path", type=str, required=True, help="Path to the external classifier")
 parser.add_argument("--use_cpu", type=bool, default=False, help="Use CPU for training")
 
 if __name__ == "__main__":
@@ -31,6 +30,7 @@ if __name__ == "__main__":
     model_path = args.model_path
     tensor_board_path = args.tensorboard_path
     image_path = args.image_path
+    classifier_path = args.classifier_path
     use_cpu = args.use_cpu
 
     # set CPU
@@ -53,11 +53,13 @@ if __name__ == "__main__":
     # define models
     gen = Generator(shape, num_classes)
     gen.create_model()
-    gen.print_model_summary()
 
     disc = Discriminator(shape)
     disc.create_model()
-    disc.print_model_summary()
+
+    # load pre-trained classifier
+    print('Classifier Exists: ', os.path.exists(classifier_path))
+    classifier = keras.models.load_model(classifier_path)
 
     # create callbacks
     image_callback = GANMonitor(data_path=dataset_path, save_path=image_path)
@@ -69,7 +71,7 @@ if __name__ == "__main__":
     discriminator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
 
     # compile and train
-    wgangp = WGAN(discriminator=disc.model, generator=gen.model, input_shape=shape)
+    wgangp = WCGAN(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape, num_classes=num_classes, embedding_dim=50)
 
     wgangp.compile(
         d_optimizer=discriminator_optimizer,
@@ -87,3 +89,4 @@ if __name__ == "__main__":
     disc.model.save(model_path + "/final_disc.keras")
 
     print("Training complete")
+

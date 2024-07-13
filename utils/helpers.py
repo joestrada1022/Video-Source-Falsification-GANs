@@ -84,7 +84,7 @@ def display_samples(
     img = np.expand_dims(img, axis=0)
 
     label = _get_label(data_path, image_path)
-    output = model.predict([img, label])
+    output = model.predict(img)
     output = (output * 127.5) + 127.5
     output = output[0]  # remove batch dimension
     if flip:
@@ -105,7 +105,7 @@ def display_samples(
         plt.savefig(save_path)
     if show:
         plt.show()
-    fig.clear()
+    plt.clf()
     return orig, output
 
 
