@@ -61,10 +61,11 @@ class DCGAN(Model):
         
         # Use softmax cross-entropy between generated image class and unaltered class
         cls_loss = cls_loss_fn(real_labels, cls_predictions)
-        return cls_loss
+
+        return tf.reduce_mean(cls_loss)
 
     def perceptual_loss(self, img1, img2):
-        return tf.abs(img1 - img2)
+        return tf.reduce_mean(tf.abs(img1 - img2))
 
     @tf.function  # if training slow, turn this one
     def train_step(self, data):
