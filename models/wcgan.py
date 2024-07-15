@@ -26,6 +26,7 @@ class WCGAN(Model):
         self.discriminator = discriminator
         self.discriminator.summary()
         self.generator = generator
+        self.generator.summary()
         self.classifier = classifier
 
         self.d_steps = discriminator_extra_steps
