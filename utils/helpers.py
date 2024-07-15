@@ -40,6 +40,7 @@ def apply_cfa(image: np.ndarray) -> np.ndarray:
 def display_samples(
     model_path,
     data_path,
+    folder: str = "Validation",
     image_path: str = None,
     save_path: str = None,
     show: bool = True,
@@ -50,6 +51,7 @@ def display_samples(
     Args:
         model_path (str or keras.Model): Path to the trained model or the model object itself.
         data_path (str): Path to the dataset main folder for grabbing a random image.
+        folder (str, optional): The folder to use for the image. Defaults to "Testing". Options are "Training", "Validation", and "Testing".
         image_path (str, optional): Path to the input image. If not provided, a random image from the validation dataset will be used.
         save_path (str, optional): Path to save the generated plot. If not provided, the plot will not be saved.
         show (bool, optional): Whether to display the images using matplotlib. Defaults to True.
@@ -60,7 +62,7 @@ def display_samples(
 
     # Load the model
     if image_path is None:
-        image_paths = glob(f"{data_path}**/Validation/**/*.jpg")
+        image_paths = glob(f"{data_path}**/{folder}/**/*.jpg")
         random.shuffle(image_paths)
         image_path = random.choice(image_paths)
         print(f"Using random image: {image_path}")
@@ -84,7 +86,7 @@ def display_samples(
     img = np.expand_dims(img, axis=0)
 
     label = _get_label(data_path, image_path)
-    output = model.predict(img)
+    output = model.predict(img, verbose=0)
     output = (output * 127.5) + 127.5
     output = output[0]  # remove batch dimension
     if flip:
@@ -94,19 +96,20 @@ def display_samples(
     orig = cv2.cvtColor(orig, cv2.COLOR_BGR2RGB)
 
     # display original and output images side by side using matplotlib
-    fig, axes = plt.subplots(1, 2)
-    axes[0].imshow(orig)
-    axes[0].set_title(f"Original Image: {label}")
-    axes[0].axis("off")
-    axes[1].imshow(output)
-    axes[1].set_title("Generated Image")
-    axes[1].axis("off")
+    if show or save_path:
+        fig, axes = plt.subplots(1, 2)
+        axes[0].imshow(orig)
+        axes[0].set_title(f"Original Image: {label}")
+        axes[0].axis("off")
+        axes[1].imshow(output)
+        axes[1].set_title("Generated Image")
+        axes[1].axis("off")
     if save_path:
         plt.savefig(save_path)
     if show:
         plt.show()
     plt.clf()
-    return orig, output
+    return orig, output, label
 
 
 def _get_label(data_path, image_path: str) -> np.ndarray:

@@ -12,7 +12,7 @@ class GANMonitor(Callback):
     Shows the progression of the same generated image after each epoch.
     """
 
-    def __init__(self, data_path: str, save_path: str, num_img:int =None):
+    def __init__(self, data_path: str, save_path: str, num_img:int =None, folder: str = "Validation"):
         device_paths = sorted(list(glob(f"{data_path}*")))
         if len(device_paths) == 0:
             raise ValueError(f"No devices found in {data_path}")
@@ -27,10 +27,10 @@ class GANMonitor(Callback):
         for i in range(self.num_img):
             if i < len(device_paths):
                 device_path = device_paths[i]
-                image_paths = list(glob(f"{device_path}/Validation/**/*.jpg"))
+                image_paths = list(glob(f"{device_path}/{folder}/**/*.jpg"))
 
             else:
-                image_paths = list(glob(f"{self.data_path}**/Validation/**/*.jpg"))
+                image_paths = list(glob(f"{self.data_path}**/{folder}/**/*.jpg"))
 
             img = random.choice(image_paths)
             imgs.append(img)
