@@ -69,9 +69,10 @@ class Generator:
 
         generator_output = x
 
-        model = Model(gen_input, generator_output)
-
         self.model_name = self.__generate_model_name()
+
+        model = Model(gen_input, generator_output, name=self.model_name)
+
         self.model = model
 
         return model

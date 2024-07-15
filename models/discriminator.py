@@ -57,11 +57,11 @@ class Discriminator:
 
         output_layer = x
 
-        # Create the model
-        model = Model(disc_input, output_layer)
-
         # Generate the model name
         self.model_name = self.__generate_model_name()
+
+        # Create the model
+        model = Model(disc_input, output_layer, name=self.model_name)
 
         # Set the model
         self.model = model
