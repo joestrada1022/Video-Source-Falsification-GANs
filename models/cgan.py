@@ -1,11 +1,6 @@
 import tensorflow as tf
 from keras.models import Model
-from keras.callbacks import Callback
 from keras import layers, metrics, losses
-from utils.helpers import display_samples
-from glob import glob
-import os, random
-import numpy as np
 
 
 class CGAN(Model):
@@ -19,7 +14,7 @@ class CGAN(Model):
     ):
         super().__init__()
         self.model_input_shape = input_shape
-        self.generator = self.modify_generator(generator, num_classes, embedding_dim)
+        self.generator = generator
         self.classifier = classifier
         self.num_classes = num_classes
 
@@ -88,7 +83,7 @@ class CGAN(Model):
         # real_labels = tf.argmax(real_labels, axis=1)
         with tf.GradientTape() as gen_tape, tf.GradientTape() as cls_tape:
             # generate images
-            generated_images = self.generator([real_images, real_labels], training=True)
+            generated_images = self.generator(real_images, training=True)
 
             real_output = self.classifier(real_images, training=True)
             fake_output = self.classifier(generated_images, training=True)

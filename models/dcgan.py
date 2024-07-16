@@ -62,7 +62,7 @@ class DCGAN(Model):
         # Use softmax cross-entropy between generated image class and unaltered class
         cls_loss = cls_loss_fn(real_labels, cls_predictions)
 
-        return tf.reduce_mean(cls_loss)
+        return cls_loss
 
     def perceptual_loss(self, img1, img2):
         return tf.reduce_mean(tf.abs(img1 - img2))
@@ -75,6 +75,8 @@ class DCGAN(Model):
             raise ValueError("Expected data format: (images, labels)")
         # get batch size
         batch_size = tf.shape(real_images)[0]
+        # shift labels for untargeted attack
+        real_labels = tf.roll(real_labels, shift=1, axis=1)
 
         # train discriminator
         for i in range(self.d_steps):
