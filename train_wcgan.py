@@ -9,7 +9,7 @@ import argparse, os
 from utils.datagenGAN import DataSetGeneratorGAN
 from utils.datagenGAN import DataGeneratorGAN
 from utils.callbacks import GANMonitor, ModelSaveCallback
-from models import Generator, Critic, WCGAN
+from models import Generator, Discriminator, WCGAN
 
 parser = argparse.ArgumentParser(description="Train a WGAN model")
 parser.add_argument("--data_path", type=str, required=True, help="Path to the data folder")
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     gen = Generator(shape, num_classes)
     gen.create_model()
 
-    disc = Critic(shape)
+    disc = Discriminator(shape)
     disc.create_model()
 
     # load pre-trained classifier
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     discriminator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
 
     # compile and train
-    wgangp = WCGAN(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape)
+    wgangp = WCGAN(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape, total_epochs=EPOCHS)
 
     wgangp.compile(
         d_optimizer=discriminator_optimizer,

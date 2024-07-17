@@ -5,8 +5,8 @@ from keras.models import load_model
 from utils.datagenGAN import DataGeneratorGAN, DataSetGeneratorGAN
 
 CLASSIFIER_PATH = 'generated/models/classifier/final_class.keras'
-GENERATOR_PATH = 'generated/wgan/models/generator_epoch_90.keras'
-
+GENERATOR_PATH = 'generated/models/working_untargeted/final_gen.keras'
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 data_path = 'data/frames'
 
 classifier = load_model(CLASSIFIER_PATH)
