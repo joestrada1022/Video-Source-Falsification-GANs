@@ -10,6 +10,7 @@ class WCGAN(Model):
         generator,
         classifier,
         input_shape,
+        total_steps,
         discriminator_extra_steps=3,
         gp_weight=10.0,
         cls_weight=1.0,  # TODO: adjust weights
@@ -33,6 +34,9 @@ class WCGAN(Model):
         self.cls_weight = cls_weight
         self.adv_weight = adv_weight
         self.perceptual_weight = perceptual_weight
+
+        self.current_step = tf.Variable(tf.constant(0, dtype=tf.int64), trainable=False)
+        self.total_steps = total_steps
 
     def compile(self, d_optimizer, g_optimizer):
         super().compile()
@@ -124,7 +128,10 @@ class WCGAN(Model):
             adv_loss = -tf.reduce_mean(gen_predictions)
 
             # calculate classification loss
-            cls_loss = self.classifier_loss(generated_images, real_labels)
+            if self.current_step >= self.total_steps // 2:
+                cls_loss = self.classifier_loss(generated_images, real_labels)
+            else:
+                cls_loss = 0.0
 
             # calculate perceptual loss
             perceptual_loss = self.perceptual_loss(real_images, generated_images)
@@ -149,4 +156,5 @@ class WCGAN(Model):
         self.adv_loss.update_state(adv_loss)
         self.p_loss.update_state(perceptual_loss)
 
+        self.current_step.assign_add(1)
         return {m.name: m.result() for m in self.metrics}
