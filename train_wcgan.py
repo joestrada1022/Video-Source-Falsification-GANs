@@ -69,7 +69,9 @@ if __name__ == "__main__":
     discriminator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
 
     # compile and train
-    wgangp = WCGAN(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape, total_epochs=EPOCHS)
+    total_steps = len(train_set) // BATCH_SIZE * EPOCHS
+    wgangp = WCGAN(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape, total_steps=total_steps)
+    print(f"Total steps: {total_steps}")
 
     wgangp.compile(
         d_optimizer=discriminator_optimizer,
