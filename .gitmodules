@@ -1,3 +1,6 @@
 [submodule "scd-videos"]
 	path = scd_videos
 	url = git@github.com:joestrada1022/scd-videos.git
+[submodule "cnn_ensemble_vsi"]
+	path = cnn_ensemble_vsi
+	url = git@github.com:joestrada1022/cnn_ensemble_vsi.git
