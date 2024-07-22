@@ -99,7 +99,10 @@ def display_samples(
     if show or save_path:
         fig, axes = plt.subplots(1, 2)
         axes[0].imshow(orig)
-        axes[0].set_title(f"Original Image: {label}")
+        class_names = _get_class_names(data_path)
+        class_index = np.argmax(label)
+        class_name = class_names[class_index]
+        axes[0].set_title(f"Original Image: {class_name}")
         axes[0].axis("off")
         axes[1].imshow(output)
         axes[1].set_title("Generated Image")
@@ -111,7 +114,6 @@ def display_samples(
     plt.clf()
     return orig, output, label
 
-
 def _get_label(data_path, image_path: str) -> np.ndarray:
     """
     Get the label for an image based on its path.
@@ -122,9 +124,24 @@ def _get_label(data_path, image_path: str) -> np.ndarray:
     Returns:
         np.ndarray: An array representing the one-hot encoded label of the image.
     """
-    devices = sorted(np.array(glob(f"{data_path}*")))
+    devices = _get_class_names(data_path)
     label = np.zeros(len(devices), dtype=int)
     for i, device in enumerate(devices):
         if device in image_path:
             label[i] = 1
     return np.array([label])
+
+def _get_class_names(data_path) -> list[str]:
+    """
+    Get the class names from the dataset.
+
+    Args:
+        data_path (str): The path to the dataset.
+
+    Returns:
+        list[str]: A list of class names.
+    """
+    devices = sorted(np.array(glob(f"{data_path}*")))
+    # get basename
+    devices = [Path(device).name for device in devices]
+    return devices

@@ -74,8 +74,8 @@ class WCGAN(Model):
 
         # calculate gradients with respect to the interpolated image
         grads = gp_tape.gradient(pred, [interpolated])[0]
-        # compute the norm of the gradients (euclidean norm. do research on this)
-        norm = tf.sqrt(tf.reduce_sum(tf.square(grads), axis=[1, 2, 3]))
+        # compute the norm of the gradients
+        norm = tf.sqrt(tf.reduce_sum(tf.square(grads), axis=[1, 2, 3]) + 1e-12)
         gp = tf.reduce_mean((norm - 1.0) ** 2)
         return gp
 
@@ -128,10 +128,10 @@ class WCGAN(Model):
             adv_loss = -tf.reduce_mean(gen_predictions)
 
             # calculate classification loss
-            if self.current_step >= self.total_steps // 2:
-                cls_loss = self.classifier_loss(generated_images, real_labels)
-            else:
-                cls_loss = 0.0
+            # if self.current_step >= self.total_steps // 2:
+            cls_loss = self.classifier_loss(generated_images, real_labels)
+            # else:
+            #     cls_loss = 0.0
 
             # calculate perceptual loss
             perceptual_loss = self.perceptual_loss(real_images, generated_images)
