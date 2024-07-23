@@ -1,36 +1,36 @@
 import tensorflow as tf
 import keras
-from keras import optimizers # type: ignore
-from keras.callbacks import TensorBoard # type: ignore
+from keras import optimizers
+from keras.callbacks import TensorBoard
 
-import argparse
-import os
+from pathlib import Path
+import argparse, os
 
-from models.generator import Generator
-from models.discriminator import Discriminator
 from utils.datagenGAN import DataSetGeneratorGAN
 from utils.datagenGAN import DataGeneratorGAN
-from models.wgan import WGAN
 from utils.callbacks import GANMonitor, ModelSaveCallback
+from models import *
 
-parser = argparse.ArgumentParser(description="Train a WGAN model")
+parser = argparse.ArgumentParser(description="Train a video camera source antiforensic model")
 parser.add_argument("--data_path", type=str, required=True, help="Path to the data folder")
-parser.add_argument("--image_path", type=str, required=True, help="Path to the image callback output folder")
-parser.add_argument("--model_path", type=str, required=True, help="Path to the model output folder")
-parser.add_argument("--tensorboard_path", type=str, required=True, help="Path to the tensorboard output")
+parser.add_argument("--classifier_path", type=str, required=True, help="Path to the external classifier")
 parser.add_argument("--use_cpu", type=bool, default=False, help="Use CPU for training")
+parser.add_argument("--output_path", type=str, required=True, help="Path to the output folder")
+parser.add_argument("--model_type", type=str, required=True, choices=['wgan', 'dcgan'], help="Type of model to train")
 
 if __name__ == "__main__":
 
-    EPOCHS = 30
+    EPOCHS = 100
     BATCH_SIZE = 12
 
     # parse arguments
     args = parser.parse_args()
     dataset_path = args.data_path
-    model_path = args.model_path
-    tensor_board_path = args.tensorboard_path
-    image_path = args.image_path
+    image_path = args.output_path + "/images"
+    model_path = args.output_path + "/models"
+    tensor_board_path = args.output_path + "/logs"
+    classifier_path = args.classifier_path
+    model_type = args.model_type
     use_cpu = args.use_cpu
 
     # set CPU
@@ -53,11 +53,13 @@ if __name__ == "__main__":
     # define models
     gen = Generator(shape, num_classes)
     gen.create_model()
-    gen.print_model_summary()
 
     disc = Discriminator(shape)
     disc.create_model()
-    disc.print_model_summary()
+
+    # load pre-trained classifier
+    print('Classifier Exists: ', os.path.exists(classifier_path))
+    classifier = keras.models.load_model(classifier_path)
 
     # create callbacks
     image_callback = GANMonitor(data_path=dataset_path, save_path=image_path)
@@ -68,15 +70,24 @@ if __name__ == "__main__":
     generator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
     discriminator_optimizer = optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
 
-    # compile and train
-    wgangp = WGAN(discriminator=disc.model, generator=gen.model, input_shape=shape)
+    if model_type == 'wgan':
+        total_steps = len(train_set) // BATCH_SIZE * EPOCHS
+        model = WGANGP(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape, total_steps=total_steps)
+        print(f"Total steps: {total_steps}")
 
-    wgangp.compile(
+    elif model_type == 'dcgan':
+        model = DCGAN(discriminator=disc.model, generator=gen.model, classifier=classifier, input_shape=shape, num_classes=num_classes, embedding_dim=50)
+    else:
+        raise ValueError("Invalid model type")
+
+    # compile and train
+
+    model.compile(
         d_optimizer=discriminator_optimizer,
         g_optimizer=generator_optimizer,
     )
 
-    wgangp.fit(
+    model.fit(
         DataGeneratorGAN(train_set, num_classes, BATCH_SIZE),
         epochs=EPOCHS,
         initial_epoch=0,
@@ -87,3 +98,4 @@ if __name__ == "__main__":
     disc.model.save(model_path + "/final_disc.keras")
 
     print("Training complete")
+
