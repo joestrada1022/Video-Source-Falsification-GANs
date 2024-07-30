@@ -1,8 +1,6 @@
 # __init__.py
 
-from .cgan import CGAN
-from .wgan import WGAN
-from .wcgan import WCGAN
+from .wgan_gp import WGANGP
 from .dcgan import DCGAN
 
 from .generator import Generator
@@ -10,11 +8,9 @@ from .discriminator import Discriminator
 from .critic import Critic
 
 __all__ = [
-    'CGAN',
-    'WGAN',
-    'WCGAN',
+    'WGANGP',
+    'DCGAN',
     'Generator',
     'Discriminator',
-    'DCGAN',
-    'Critic'
+    'Critic',
 ]

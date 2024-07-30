@@ -4,7 +4,6 @@ from cnn_ensemble_vsi.dataset.patch_extractor_all_overlapping import (
 )
 from cnn_ensemble_vsi.CNN_base_learners.cnn_network import ConstrainedLayer
 
-import tensorflow as tf
 import keras
 from utils.helpers import display_samples
 from utils.datagenGAN import DataGeneratorGAN, DataSetGeneratorGAN
@@ -13,7 +12,7 @@ import time
 import pandas as pd
 
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix
 
 generator = keras.models.load_model("generated/wgan/models/generator_epoch_99.keras")
 
